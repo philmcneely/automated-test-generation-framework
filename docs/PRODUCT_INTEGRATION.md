@@ -1,7 +1,86 @@
-# Example: Product CI Integration with Test Result Reporting
+# Product CI Integration Guide
 
-This example shows how to integrate the automated test generation framework
-into your product's CI pipeline with Jira result reporting.
+This guide shows how to integrate the automated test generation framework into your product's CI pipeline with Jira result reporting.
+
+## 🚨 Framework Assumptions & Requirements
+
+### Language & Runtime Requirements
+- **Primary Language**: Python 3.10+ (framework is Python-based)
+- **Test Framework**: pytest (required for test execution)
+- **Browser Automation**: Playwright (Python version)
+- **Generated Tests**: Python/pytest format only
+
+### Test Framework Assumptions
+This framework is **specifically designed for the playwright-ai-framework** and makes several assumptions:
+
+#### ✅ Compatible Frameworks
+- **playwright-ai-framework** (primary target - full compatibility)
+- **Standard Playwright + pytest** (basic compatibility)
+- **Python-based Page Object Model** frameworks
+
+#### ❌ Currently NOT Compatible With
+- **JavaScript/TypeScript** test frameworks (Cypress, WebdriverIO, etc.)
+- **Java** test frameworks (Selenium, TestNG, etc.)
+- **C#** test frameworks (SpecFlow, NUnit, etc.)
+- **Non-pytest** Python frameworks (unittest, nose, etc.)
+- **Non-Page Object Model** architectures
+
+### Generated Test Structure
+The framework generates tests in this specific format:
+```python
+# Generated test structure (Python only)
+import pytest
+from playwright.async_api import expect
+
+@pytest.mark.asyncio
+@pytest.mark.generated
+async def test_login_happy_path(page, app):
+    await app.home_page.navigate()           # Page Object Model
+    await app.home_page.click_login()        # Assumes POM methods
+    await app.home_page.enter_username('user')
+    await expect(page.locator('text=Welcome')).to_be_visible()
+```
+
+### Knowledge Base Requirements
+- **Source Repository**: Must contain Python Playwright test files
+- **Selector Patterns**: Framework extracts from `page.click()`, `page.fill()`, etc.
+- **File Extensions**: Looks for `.py` files in test directories
+- **Page Object Pattern**: Expects `app.page_name.method_name()` structure
+
+## 🔧 Adapting to Other Frameworks
+
+If you're using a different test framework, you have several options:
+
+### Option 1: Adapt Your Framework
+Modify your existing framework to match the expected patterns:
+- Use Page Object Model architecture
+- Use pytest as test runner
+- Structure methods as `app.page.action()` format
+
+### Option 2: Custom Template Modification (Advanced)
+Modify the code generation templates in `src/agent/agent_runner_pom.py`:
+- Change import statements for your framework
+- Modify action templates (click, fill, etc.)
+- Update assertion patterns
+- Adjust test structure format
+
+### Option 3: Translation Layer
+Create a translation layer that converts generated Python tests to your target language:
+- Generate Python tests as intermediate format
+- Parse and convert to JavaScript/TypeScript/Java/etc.
+- Maintain action mappings between frameworks
+
+### Option 4: LLM Integration (Future)
+The framework includes a `prompt.md` file designed for future LLM integration that could:
+- Generate tests in any language/framework
+- Adapt to different coding patterns
+- Handle more complex scenarios
+
+## 🎯 Integration Examples
+
+Below are examples assuming you're using **Python + Playwright + pytest**. For other frameworks, apply the adaptation strategies above.
+
+## Example: Product CI Integration with Test Result Reporting
 
 ## 1. GitHub Actions Workflow for Product CI
 
