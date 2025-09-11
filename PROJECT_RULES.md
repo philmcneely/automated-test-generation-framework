@@ -27,24 +27,30 @@ git submodule update --init --recursive
 git checkout HEAD -- playwright-ai-framework
 ```
 
-**RULE #3: Git Status Checking**
+### Rule 4: Vector Database Files
+- **NEVER** commit vector database files or embeddings
+- Common patterns to avoid: `*.db`, `*.sqlite`, `*.vectordb`, `*.faiss`, `chroma_db/`, `embeddings/`
+- These files are large and contain computed data that should be regenerated
+- Always add to .gitignore if new vector storage systems are introduced
+
+**RULE #5: Git Status Checking**
 - Always check `git status` before committing
 - If you see `modified: playwright-ai-framework (modified content)`, do NOT add it
 - Use `git add -A` sparingly - prefer specific file additions
 
 ### Development Workflow Rules
 
-**RULE #4: Class-Based Architecture Only**
+**RULE #6: Class-Based Architecture Only**
 - All new modules must be class-based, not functional
 - Existing functional modules should be converted to classes when touched
 - Use proper dependency injection for testability
 
-**RULE #5: Comprehensive Testing Required**
+**RULE #7: Comprehensive Testing Required**
 - Every class must have a corresponding test file
 - Aim for high test coverage with meaningful assertions
 - Use proper mocking for external dependencies
 
-**RULE #6: Type Annotations Mandatory**
+**RULE #8: Type Annotations Mandatory**
 - All functions and methods must have proper type annotations
 - Use `typing` module for complex types
 - Ensure mypy compliance

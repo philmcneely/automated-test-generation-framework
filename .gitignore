@@ -126,3 +126,23 @@ knowledge_base_*.json
 
 # Temporary repository clones
 tmp_repo/
+
+# Vector databases and embeddings
+*.db
+*.sqlite
+*.sqlite3
+*.vectordb
+*.faiss
+*.index
+chroma_db/
+chromadb/
+embeddings/
+vector_store/
+.chroma/
+*.embedding
+*.vec
+*.hdf5
+*.npy
+*.npz
+weaviate_data/
+pinecone_cache/
