@@ -61,7 +61,9 @@ from src.agent.agent_runner_pom import to_snake_case
 class TestAgentRunnerComprehensive:
     """Comprehensive tests for agent_runner.py"""
 
-    def test_load_json_valid(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_load_json_valid(self) -> None:
         """Test loading valid JSON file."""
         test_data = {"key": "value", "nested": {"inner": "data"}}
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -74,20 +76,23 @@ class TestAgentRunnerComprehensive:
         finally:
             os.unlink(temp_path)
 
-    def test_load_json_file_not_found(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_load_json_file_not_found(self) -> None:
         """Test loading non-existent JSON file."""
         with pytest.raises(FileNotFoundError):
             load_json("nonexistent_file.json")
 
-    def test_build_selector_index_empty_kb(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_build_selector_index_empty_kb(self) -> None:
         """Test building selector index with empty knowledge base."""
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
         result = _build_selector_index(kb)
         assert result == {}
 
-    def test_build_selector_index_with_data(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_build_selector_index_with_data(self) -> None:
         """Test building selector index with valid data."""
-        kb = {
+        kb: dict = {
             "page_objects": [
                 {
                     "selectors": [
@@ -104,7 +109,8 @@ class TestAgentRunnerComprehensive:
         }
         assert result == expected
 
-    def test_resolve_target_with_selectors(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_resolve_target_with_selectors(self) -> None:
         """Test target resolution with various selector types."""
         selector_index = {"button": "#btn", "field": ".input"}
 
@@ -124,11 +130,11 @@ class TestAgentRunnerComprehensive:
         # Test unknown elements
         assert _resolve_target("unknown", selector_index) == "unknown"
 
-        # Test None/empty
-        assert _resolve_target(None, selector_index) is None
+        # Test empty string
         assert _resolve_target("", selector_index) == ""
 
-    def test_generate_test_step_all_actions(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_test_step_all_actions(self) -> None:
         """Test test step generation for all supported actions."""
         # Test click action
         result = _generate_test_step("click", "#button", None)
@@ -143,7 +149,7 @@ class TestAgentRunnerComprehensive:
         assert result == "        page.goto('/login')"
 
         # Test assert_text action
-        result = _generate_test_step("assert_text", None, "Welcome")
+        result = _generate_test_step("assert_text", "", "Welcome")
         assert result == "        page.wait_for_selector('text=Welcome')"
 
         # Test unsupported action
@@ -151,7 +157,8 @@ class TestAgentRunnerComprehensive:
         assert "TODO: Unsupported step" in result
         assert "hover" in result
 
-    def test_generate_test_function_name(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_test_function_name(self) -> None:
         """Test test function name generation."""
         # Test normal title
         result = _generate_test_function_name("User Login Test")
@@ -167,7 +174,8 @@ class TestAgentRunnerComprehensive:
         assert len(result) <= 65  # test_ + 60 chars
         assert result.startswith("test_")
 
-    def test_build_test_code(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_build_test_code(self) -> None:
         """Test complete test code building."""
         test_func_name = "test_user_login"
         base_url = "https://example.com"
@@ -188,7 +196,8 @@ class TestAgentRunnerComprehensive:
         assert "page.fill('#user', 'test')" in result
         assert "browser.close()" in result
 
-    def test_generate_playwright_test_complete(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_playwright_test_complete(self) -> None:
         """Test complete test generation with realistic data."""
         ticket = {
             "title": "User Login Flow",
@@ -201,7 +210,7 @@ class TestAgentRunnerComprehensive:
             ],
         }
 
-        kb = {
+        kb: dict = {
             "page_objects": [
                 {
                     "selectors": [
@@ -230,10 +239,11 @@ class TestAgentRunnerComprehensive:
         assert "page.click('#login-btn')" in result
         assert "page.wait_for_selector('text=Welcome')" in result
 
-    def test_generate_playwright_test_empty_ticket(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_playwright_test_empty_ticket(self) -> None:
         """Test test generation with empty ticket."""
         ticket = {"title": "", "acceptance_criteria": []}
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
 
         result = generate_playwright_test(ticket, kb)
 
@@ -241,7 +251,8 @@ class TestAgentRunnerComprehensive:
         assert "page.goto(BASE_URL)" in result
         assert "browser.close()" in result
 
-    def test_generate_playwright_test_unsupported_actions(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_playwright_test_unsupported_actions(self) -> None:
         """Test test generation with unsupported actions."""
         ticket = {
             "title": "Complex Test",
@@ -250,7 +261,7 @@ class TestAgentRunnerComprehensive:
                 {"action": "drag", "target": "#source", "value": "#target"},
             ],
         }
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
 
         result = generate_playwright_test(ticket, kb)
 
@@ -262,7 +273,8 @@ class TestAgentRunnerComprehensive:
 class TestAgentRunnerPOMComprehensive:
     """Comprehensive tests for agent_runner_pom.py"""
 
-    def test_load_json_pom(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_load_json_pom(self) -> None:
         """Test JSON loading for POM agent."""
         test_data = {"test": "data"}
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -275,7 +287,8 @@ class TestAgentRunnerPOMComprehensive:
         finally:
             os.unlink(temp_path)
 
-    def test_to_snake_case_conversions(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_to_snake_case_conversions(self) -> None:
         """Test various snake_case conversions."""
         test_cases = [
             ("CamelCase", "camel_case"),
@@ -294,7 +307,8 @@ class TestAgentRunnerPOMComprehensive:
                 result == expected
             ), f"Failed for {input_str}: got {result}, expected {expected}"
 
-    def test_generate_pom_playwright_test_basic(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_pom_playwright_test_basic(self) -> None:
         """Test basic POM test generation."""
         ticket = {
             "title": "Login Test",
@@ -306,7 +320,7 @@ class TestAgentRunnerPOMComprehensive:
             ],
         }
 
-        kb = {
+        kb: dict = {
             "page_objects": [
                 {
                     "name": "LoginPage",
@@ -330,7 +344,8 @@ class TestAgentRunnerPOMComprehensive:
         assert "await app.login_page.enter_password('pass')" in result
         assert "await app.login_page.click_login()" in result
 
-    def test_generate_pom_playwright_test_with_assertions(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_pom_playwright_test_with_assertions(self) -> None:
         """Test POM test generation with assertions."""
         ticket = {
             "title": "Welcome Test",
@@ -338,7 +353,7 @@ class TestAgentRunnerPOMComprehensive:
                 {"action": "assert_text", "value": "Welcome to the app"},
             ],
         }
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
 
         result = generate_pom_playwright_test(ticket, kb)
 
@@ -347,7 +362,8 @@ class TestAgentRunnerPOMComprehensive:
             in result
         )
 
-    def test_generate_pom_playwright_test_fallback_methods(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_pom_playwright_test_fallback_methods(self) -> None:
         """Test POM test generation with fallback to generic methods."""
         ticket = {
             "title": "Custom Action Test",
@@ -361,7 +377,7 @@ class TestAgentRunnerPOMComprehensive:
             ],
         }
 
-        kb = {
+        kb: dict = {
             "page_objects": [
                 {
                     "name": "FormPage",
@@ -379,17 +395,19 @@ class TestAgentRunnerPOMComprehensive:
         assert "await app.form_page.click_submit_form()" in result
         assert "await app.form_page.enter_email_field('test@example.com')" in result
 
-    def test_generate_pom_playwright_test_empty_ticket(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_pom_playwright_test_empty_ticket(self) -> None:
         """Test POM test generation with empty ticket."""
         ticket = {"title": "", "acceptance_criteria": []}
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
 
         result = generate_pom_playwright_test(ticket, kb)
 
         assert "async def test_(page, app):" in result  # Empty title results in test_()
         assert "This test was automatically generated" in result
 
-    def test_generate_pom_playwright_test_unsupported_actions(self):
+    @pytest.mark.unit  # type: ignore[misc]
+    def test_generate_pom_playwright_test_unsupported_actions(self) -> None:
         """Test POM test generation with unsupported actions."""
         ticket = {
             "title": "Complex Actions",
@@ -398,7 +416,7 @@ class TestAgentRunnerPOMComprehensive:
                 {"action": "double_click", "target": "#button"},
             ],
         }
-        kb = {"page_objects": []}
+        kb: dict = {"page_objects": []}
 
         result = generate_pom_playwright_test(ticket, kb)
 

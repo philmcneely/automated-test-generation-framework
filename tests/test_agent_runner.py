@@ -44,6 +44,7 @@ from src.agent.agent_runner_pom import to_snake_case
 class TestAgentRunner:
     """Test cases for the agent runner functionality."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_load_json_valid(self) -> None:
         """Test loading valid JSON file."""
         test_data: Dict[str, Any] = {
@@ -61,6 +62,7 @@ class TestAgentRunner:
         finally:
             os.unlink(temp_path)
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_load_json_invalid(self) -> None:
         """Test loading invalid JSON file."""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
@@ -73,6 +75,7 @@ class TestAgentRunner:
         finally:
             os.unlink(temp_path)
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_to_snake_case(self) -> None:
         """Test snake case conversion function."""
         assert to_snake_case("LoginButton") == "login_button"
@@ -84,6 +87,7 @@ class TestAgentRunner:
 class TestAgentRunnerPOM:
     """Test cases for the POM-based agent runner."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_basic_pom_generation(self) -> None:
         """Test basic POM test generation."""
         ticket: Dict[str, Any] = {
@@ -119,6 +123,7 @@ class TestAgentRunnerPOM:
         assert "await app.login_page.click_login()" in result
         assert "await app.login_page.enter_username('testuser')" in result
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_empty_ticket(self) -> None:
         """Test handling of empty ticket."""
         ticket: Dict[str, Any] = {"title": "Empty Test", "acceptance_criteria": []}
@@ -134,6 +139,7 @@ class TestAgentRunnerPOM:
 class TestIntegration:
     """Integration tests for the agent runner."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_end_to_end_test_generation(self) -> None:
         """Test end-to-end test generation workflow."""
         # Create a realistic ticket
@@ -178,6 +184,7 @@ class TestIntegration:
 class TestErrorHandling:
     """Test error handling and edge cases."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_missing_target_in_kb(self) -> None:
         """Test handling of targets not in knowledge base."""
         ticket: Dict[str, Any] = {
@@ -192,6 +199,7 @@ class TestErrorHandling:
         # Should handle gracefully with fallback
         assert "await page.click('unknown_element')" in result
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_invalid_action(self) -> None:
         """Test handling of invalid actions."""
         ticket: Dict[str, Any] = {

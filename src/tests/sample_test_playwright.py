@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 BASE_URL = os.getenv("APP_BASE_URL", "https://example.com")
 
 
-@pytest.mark.e2e
+@pytest.mark.e2e  # type: ignore[misc]
 def test_login_happy_path() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)

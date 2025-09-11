@@ -30,6 +30,7 @@ Date: 2025-09-11
 
 import os
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -39,6 +40,7 @@ from src.validator.test_validator import ValidatorService
 class TestValidatorUnit:
     """Test cases for the test validator functionality."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_validator_initialization(self) -> None:
         """Test validator initialization."""
         validator = ValidatorService()
@@ -47,6 +49,7 @@ class TestValidatorUnit:
         validator_custom = ValidatorService("custom/path")
         assert str(validator_custom.playwright_path) == "custom/path"
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_validate_nonexistent_test(self) -> None:
         """Test validation of nonexistent test file."""
         validator = ValidatorService()
@@ -56,6 +59,7 @@ class TestValidatorUnit:
         assert "Test file not found" in result["error"]
         assert result["test_file"] == "nonexistent_test.py"
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_validate_valid_test_structure(self) -> None:
         """Test validation of a properly structured test."""
         # Create a valid test file
@@ -91,6 +95,7 @@ async def test_valid_test(page, app):
         finally:
             os.unlink(temp_path)
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_prepare_test_for_validation(self) -> None:
         """Test test preparation for validation."""
         validator = ValidatorService()
@@ -107,7 +112,7 @@ async def test_something(page):
             temp_path = f.name
 
         try:
-            prepared_content = validator._prepare_test_for_validation(temp_path)
+            prepared_content = validator._prepare_test_for_validation(Path(temp_path))
 
             # Should add validation marker
             assert "@pytest.mark.validation" in prepared_content
@@ -116,6 +121,7 @@ async def test_something(page):
         finally:
             os.unlink(temp_path)
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_generate_validation_report_success(self) -> None:
         """Test validation report generation for successful tests."""
         validator = ValidatorService()
@@ -132,6 +138,7 @@ async def test_something(page):
         assert "Failed: 0" in report
         assert "Success Rate: 100.0%" in report
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_generate_validation_report_mixed(self) -> None:
         """Test validation report generation for mixed results."""
         validator = ValidatorService()
@@ -158,6 +165,7 @@ async def test_something(page):
 class TestValidatorIntegration:
     """Integration tests for the validator."""
 
+    @pytest.mark.unit  # type: ignore[misc]
     def test_validator_with_real_test_structure(self) -> None:
         """Test validator with a realistic test structure."""
         # Create a test that matches our expected format
