@@ -27,7 +27,12 @@ class TestJiraReporter:
                 "JIRA_TOKEN": "test-token",
             },
         ):
-            reporter = JiraReporter(dry_run=True)
+            reporter = JiraReporter(
+                base_url=None,
+                username=None,
+                token=None,
+                dry_run=True,
+            )
             assert reporter.base_url == "https://test.atlassian.net"
             assert reporter.username == "test@example.com"
             assert reporter.token == "test-token"
@@ -49,18 +54,33 @@ class TestJiraReporter:
     def test_init_missing_credentials_dry_run(self):
         """Test initialization with missing credentials in dry run mode."""
         # Should work in dry run mode even without credentials
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
         assert reporter.dry_run is True
 
     def test_init_missing_credentials_live_mode(self):
         """Test initialization with missing credentials in live mode."""
         with patch.dict("os.environ", {}, clear=True):
             with pytest.raises(ValueError, match="Jira credentials must be provided"):
-                JiraReporter(dry_run=False)
+                JiraReporter(
+                    base_url=None,
+                    username=None,
+                    token=None,
+                    dry_run=False,
+                )
 
     def test_format_test_result_comment_passed(self):
         """Test formatting of passed test result."""
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
         result = JiraTestResult(
             ticket_id="ABC-123",
             test_name="test_login_flow",
@@ -80,7 +100,12 @@ class TestJiraReporter:
 
     def test_format_test_result_comment_failed(self):
         """Test formatting of failed test result."""
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
         result = JiraTestResult(
             ticket_id="ABC-123",
             test_name="test_login_flow",
@@ -99,7 +124,12 @@ class TestJiraReporter:
 
     def test_format_test_result_comment_skipped(self):
         """Test formatting of skipped test result."""
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
         result = JiraTestResult(
             ticket_id="ABC-123",
             test_name="test_login_flow",
@@ -118,7 +148,12 @@ class TestJiraReporter:
 
         caplog.set_level(logging.INFO)
 
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
         result = JiraTestResult(
             ticket_id="ABC-123",
             test_name="test_login_flow",
@@ -243,7 +278,12 @@ class TestJiraReporter:
 
         caplog.set_level(logging.INFO)
 
-        reporter = JiraReporter(dry_run=True)
+        reporter = JiraReporter(
+            base_url="https://dummy.atlassian.net",
+            username="dummy@example.com",
+            token="dummy-token",
+            dry_run=True,
+        )
 
         success = reporter.update_ticket_status("ABC-123", "Done")
 

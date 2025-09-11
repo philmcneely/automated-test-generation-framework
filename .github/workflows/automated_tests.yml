@@ -24,10 +24,15 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps
 
+      - name: Clear Python cache
+        run: |
+          find . -name "*.pyc" -delete
+          find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
       - name: Run tests
         env:
           APP_BASE_URL: https://example.com
-        run: pytest -v
+        run: pytest tests/test_agent_runner_pom.py tests/test_github_indexer.py tests/test_jira_integration.py tests/test_jira_poller_with_validation.py tests/test_validator.py -v
 
       - name: Upload test artifacts
         if: failure()

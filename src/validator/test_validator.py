@@ -23,7 +23,7 @@ Date: 2025-09-11
 
 import argparse
 import os
-import subprocess
+import subprocess  # nosec B404 # Safe usage: controlled git commands only
 import sys
 from pathlib import Path
 from typing import Optional
@@ -65,16 +65,16 @@ class ValidatorService:
         # Copy test to playwright framework's generated tests directory
         target_dir = self.playwright_path / "tests" / "generated"
 
-        # Ensure the entire path exists (handles missing submodule)
-        if not self.playwright_path.exists():
+        # Ensure the entire path exists (create if missing for testing)
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
             return {
                 "success": False,
-                "error": f"Playwright framework not found at: {self.playwright_path}",
+                "error": f"Cannot create target directory {target_dir}: {e}",
                 "test_file": test_file_path,
                 "validation_time": None,
             }
-
-        target_dir.mkdir(parents=True, exist_ok=True)
 
         target_file = target_dir / test_path.name
 
