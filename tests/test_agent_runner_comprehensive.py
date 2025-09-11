@@ -180,21 +180,23 @@ class TestAgentRunnerComprehensive:
         test_func_name = "test_user_login"
         base_url = "https://example.com"
         body_lines = [
-            "        page.click('#login')",
-            "        page.fill('#user', 'test')",
+            "        await app.login_page.page.click('#login')",
+            "        await app.login_page.page.fill('#user', 'test')",
         ]
 
         result = _build_test_code(test_func_name, base_url, body_lines)
 
-        assert "import os" in result
         assert "import pytest" in result
-        assert "from playwright.sync_api import sync_playwright" in result
-        assert 'BASE_URL = os.getenv("APP_BASE_URL", "https://example.com")' in result
-        assert "@pytest.mark.e2e" in result
-        assert "def test_user_login():" in result
-        assert "page.click('#login')" in result
-        assert "page.fill('#user', 'test')" in result
-        assert "browser.close()" in result
+        assert (
+            "from utils.decorators.screenshot_decorator import screenshot_on_failure"
+            in result
+        )
+        assert "@screenshot_on_failure" in result
+        assert "@pytest.mark.login" in result
+        assert "@pytest.mark.asyncio" in result
+        assert "async def test_user_login(app):" in result
+        assert "await app.login_page.page.click('#login')" in result
+        assert "await app.login_page.page.fill('#user', 'test')" in result
 
     @pytest.mark.unit  # type: ignore[misc]
     def test_generate_playwright_test_complete(self) -> None:
@@ -226,18 +228,22 @@ class TestAgentRunnerComprehensive:
             result = generate_playwright_test(ticket, kb)
 
         # Check structure
-        assert "import os" in result
         assert "import pytest" in result
-        assert "@pytest.mark.e2e" in result
-        assert "def test_user_login_flow():" in result
+        assert (
+            "from utils.decorators.screenshot_decorator import screenshot_on_failure"
+            in result
+        )
+        assert "@screenshot_on_failure" in result
+        assert "@pytest.mark.login" in result
+        assert "@pytest.mark.asyncio" in result
+        assert "async def test_user_login_flow(app):" in result
 
         # Check content
-        assert 'BASE_URL = os.getenv("APP_BASE_URL", "https://myapp.com")' in result
-        assert "page.goto('/login')" in result
-        assert "page.fill('#username', 'testuser')" in result
-        assert "page.fill('#password', 'testpass')" in result
-        assert "page.click('#login-btn')" in result
-        assert "page.wait_for_selector('text=Welcome')" in result
+        assert "await app.login_page.navigate()" in result
+        assert "await app.login_page.page.fill('#username', 'testuser')" in result
+        assert "await app.login_page.page.fill('#password', 'testpass')" in result
+        assert "await app.login_page.page.click('#login-btn')" in result
+        assert "await app.login_page.page.wait_for_selector('text=Welcome')" in result
 
     @pytest.mark.unit  # type: ignore[misc]
     def test_generate_playwright_test_empty_ticket(self) -> None:
@@ -247,9 +253,9 @@ class TestAgentRunnerComprehensive:
 
         result = generate_playwright_test(ticket, kb)
 
-        assert "def test_():" in result  # Empty title results in test_()
-        assert "page.goto(BASE_URL)" in result
-        assert "browser.close()" in result
+        assert "async def test_(app):" in result  # Empty title results in test_()
+        assert "@screenshot_on_failure" in result
+        assert "@pytest.mark.asyncio" in result
 
     @pytest.mark.unit  # type: ignore[misc]
     def test_generate_playwright_test_unsupported_actions(self) -> None:
