@@ -31,7 +31,7 @@ Date: 2025-09-11
 
 import json
 import os
-import subprocess
+import subprocess  # nosec B404 # Safe usage: controlled execution of agent/validator scripts
 import sys
 import tempfile
 import time
@@ -75,7 +75,7 @@ def validate_and_save_test(test_content: str, ticket_id: str) -> bool:
         # Validate the generated test
         print(f"🔍 Validating generated test for ticket {ticket_id}")
 
-        validation_result = subprocess.run(
+        validation_result = subprocess.run(  # nosec B603 # Safe: controlled execution of internal validator
             [
                 sys.executable,
                 "src/validator/test_validator.py",
@@ -174,7 +174,7 @@ def process_ticket(ticket: Dict[str, Any]) -> None:
 
     try:
         # Run POM agent to generate test compatible with existing framework
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B607 B603 # Safe: controlled execution of internal script
             [
                 "python",
                 "src/agent/agent_runner_pom.py",

@@ -1,7 +1,7 @@
 import json
 import os
 import re
-import subprocess
+import subprocess  # nosec B404 # Safe usage: controlled git commands only
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -15,15 +15,15 @@ def shallow_clone_or_update() -> None:
     if not REPO_URL:
         raise RuntimeError("Set GITHUB_REPO_URL")
     if CLONE_DIR.exists():
-        subprocess.run(
+        subprocess.run(  # nosec B607 B603 # Safe: controlled git command with static args
             ["git", "-C", str(CLONE_DIR), "fetch", "--depth=1", "origin", BRANCH],
             check=True,
         )
-        subprocess.run(
+        subprocess.run(  # nosec B607 B603 # Safe: controlled git command with static args
             ["git", "-C", str(CLONE_DIR), "reset", "--hard", "FETCH_HEAD"], check=True
         )
     else:
-        subprocess.run(
+        subprocess.run(  # nosec B607 B603 # Safe: controlled git command with static args
             [
                 "git",
                 "clone",

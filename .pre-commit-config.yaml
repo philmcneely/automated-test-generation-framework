@@ -1,0 +1,69 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^playwright-ai-framework/
+      - id: end-of-file-fixer
+        exclude: ^playwright-ai-framework/
+      - id: check-yaml
+        exclude: ^playwright-ai-framework/
+      - id: check-added-large-files
+        exclude: ^playwright-ai-framework/
+      - id: check-merge-conflict
+        exclude: ^playwright-ai-framework/
+      - id: debug-statements
+        exclude: ^playwright-ai-framework/
+      - id: check-docstring-first
+        exclude: ^playwright-ai-framework/
+
+  - repo: https://github.com/psf/black
+    rev: 23.9.1
+    hooks:
+      - id: black
+        language_version: python3
+        exclude: ^playwright-ai-framework/
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        exclude: ^playwright-ai-framework/
+
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        exclude: ^playwright-ai-framework/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.1
+    hooks:
+      - id: mypy
+        exclude: ^playwright-ai-framework/
+        additional_dependencies: [types-requests, types-PyYAML]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        args: ["-f", "json", "-o", "bandit-report.json"]
+        files: ^src/.*\.py$
+        additional_dependencies: [pbr]
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    rev: v1.3.2
+    hooks:
+      - id: python-safety-dependencies-check
+        exclude: ^playwright-ai-framework/
+
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: pytest-unit
+        entry: python -m pytest tests/ -m "unit" -v
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        exclude: ^playwright-ai-framework/

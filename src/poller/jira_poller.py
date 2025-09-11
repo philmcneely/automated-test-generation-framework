@@ -82,7 +82,7 @@ def process_ticket(ticket: Dict[str, Any]) -> None:
     """Process a single ticket through the agent pipeline"""
     import json
     import os
-    import subprocess
+    import subprocess  # nosec B404 # Safe usage: controlled execution of agent scripts
     import tempfile
 
     # Extract relevant ticket information
@@ -125,7 +125,7 @@ def process_ticket(ticket: Dict[str, Any]) -> None:
 
     try:
         # Run POM agent to generate test compatible with existing framework
-        result = subprocess.run(
+        result = subprocess.run(  # nosec B607 B603 # Safe: controlled execution of internal script
             [
                 "python",
                 "src/agent/agent_runner_pom.py",

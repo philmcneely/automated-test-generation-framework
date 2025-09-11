@@ -58,7 +58,7 @@
       ],
       "markers": [
         "@pytest.mark.login",
-        "@pytest.mark.smoke", 
+        "@pytest.mark.smoke",
         "@pytest.mark.regression",
         "@pytest.mark.visual",
         "@pytest.mark.security"

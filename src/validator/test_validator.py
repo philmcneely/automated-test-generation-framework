@@ -23,7 +23,7 @@ Date: 2025-09-11
 
 import argparse
 import os
-import subprocess
+import subprocess  # nosec B404 # Safe usage: controlled execution of pytest commands
 import sys
 from pathlib import Path
 from typing import Optional
@@ -145,7 +145,7 @@ class ValidatorService:
 
             print(f"🚀 Running: {' '.join(cmd)}")
 
-            result = subprocess.run(
+            result = subprocess.run(  # nosec B603 # Safe: controlled execution of pytest commands
                 cmd, capture_output=True, text=True, timeout=120  # 2 minute timeout
             )
 

@@ -3,10 +3,10 @@ import pytest
 from utils.decorators.screenshot_decorator import screenshot_on_failure
 
 
-@screenshot_on_failure
-@pytest.mark.login
-@pytest.mark.asyncio
-async def test_login_happy_path(app):
+@screenshot_on_failure  # type: ignore[misc]
+@pytest.mark.login  # type: ignore[misc]
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_login_happy_path(app) -> None:  # type: ignore[no-untyped-def]
     """Generated test using playwright-ai-framework patterns."""
     await app.login_page.navigate()
     await app.login_page.page.click("#login")

@@ -110,9 +110,9 @@ def _build_test_code(test_func_name: str, base_url: str, body_lines: List[str]) 
         "@pytest.mark.asyncio",
         f"async def {test_func_name}(app):",
         '    """Generated test using playwright-ai-framework patterns."""',
-        '    # Note: This test should be placed in the playwright-ai-framework/tests/generated/ directory',
+        "    # Note: This test should be placed in the playwright-ai-framework/tests/generated/ directory",
     ]
-    
+
     # Convert sync playwright steps to framework-based steps
     for line in body_lines:
         # Convert page operations to app-based operations
@@ -127,21 +127,27 @@ def _build_test_code(test_func_name: str, base_url: str, body_lines: List[str]) 
             if len(parts) >= 3:
                 selector = parts[1]
                 value = parts[3]
-                converted_line = f"    await app.login_page.page.fill('{selector}', '{value}')"
+                converted_line = (
+                    f"    await app.login_page.page.fill('{selector}', '{value}')"
+                )
                 code_lines.append(converted_line)
         elif "page.wait_for_selector(" in line:
             # Keep wait operations as-is but use app.login_page.page
             selector = line.split("'")[1] if "'" in line else line.split('"')[1]
-            converted_line = f"    await app.login_page.page.wait_for_selector('{selector}')"
+            converted_line = (
+                f"    await app.login_page.page.wait_for_selector('{selector}')"
+            )
             code_lines.append(converted_line)
         elif "page.goto(" in line:
             # Use app navigation
             code_lines.append("    await app.login_page.navigate()")
         else:
             # Keep other lines as-is but make them async if needed
-            converted_line = line.replace("        page.", "    await app.login_page.page.")
+            converted_line = line.replace(
+                "        page.", "    await app.login_page.page."
+            )
             code_lines.append(converted_line)
-    
+
     return "\n".join(code_lines)
 
 
