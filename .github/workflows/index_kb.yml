@@ -1,8 +1,21 @@
 name: Index Knowledge Base
 
 on:
-  schedule:
-    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      repo_url:
+        description: 'Repository URL to index (e.g., https://github.com/owner/repo.git)'
+        required: true
+        default: 'https://github.com/philmcneely/playwright-ai-framework.git'
+      branch:
+        description: 'Branch to index'
+        required: false
+        default: 'main'
+      enable_auto_commit:
+        description: 'Automatically commit updated knowledge base'
+        type: boolean
+        required: false
+        default: true
 
 permissions:
   contents: write
@@ -24,14 +37,22 @@ jobs:
 
       - name: Run GitHub indexer
         env:
-          GITHUB_REPO_URL: https://github.com/philmcneely/playwright-ai-framework.git
-          GITHUB_BRANCH: main
+          GITHUB_REPO_URL: ${{ github.event.inputs.repo_url }}
+          GITHUB_BRANCH: ${{ github.event.inputs.branch }}
         run: make index-github
 
       - name: Commit updated KB
+        if: ${{ github.event.inputs.enable_auto_commit == 'true' }}
         run: |
           git config user.name "auto-indexer"
           git config user.email "auto-indexer@users.noreply.github.com"
           git add knowledge_base_schema.json
           git commit -m "chore: update KB via indexer" || echo "No changes"
           git push
+
+      - name: Upload updated knowledge base
+        if: ${{ github.event.inputs.enable_auto_commit == 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-knowledge-base
+          path: knowledge_base_schema.json

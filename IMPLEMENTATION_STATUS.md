@@ -61,10 +61,10 @@ This repository implements an end-to-end automated test generation ecosystem tha
 ### 6. CI/CD Pipeline
 - **Status**: ✅ Implemented
 - **Features**:
-  - GitHub Actions workflow for automated testing
-  - Playwright browser installation
-  - Test execution with artifact upload on failure
-  - Knowledge base indexing workflow
+  - GitHub Actions workflow for automated testing (runs on push/PR)
+  - Manual knowledge base indexing workflow (workflow_dispatch)
+  - Optional auto-commit of updated knowledge base
+  - Fast indexing (~2 seconds) for real-time selector updates
 
 ### 7. Test Infrastructure
 - **Status**: ✅ Implemented with comprehensive test coverage
@@ -147,10 +147,17 @@ python src/poller/jira_poller_with_validation.py
 pytest -v
 ```
 
-### 5. Index GitHub Repository
+### 5. Index GitHub Repository (Optional)
 ```bash
-export GITHUB_REPO_URL=https://github.com/your-org/your-repo.git
+# Manual local indexing
+export GITHUB_REPO_URL=https://github.com/your-org/your-test-repo.git
 make index-github
+
+# Or trigger via GitHub Actions (manual workflow)
+# Go to Actions tab → "Index Knowledge Base" → Run workflow
+# - Choose repository URL to index
+# - Choose branch
+# - Enable/disable auto-commit of updated KB
 ```
 
 ## 📁 File Structure
