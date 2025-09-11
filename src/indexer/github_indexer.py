@@ -6,11 +6,15 @@ GitHub repositories to continuously update the knowledge base with real-world
 selectors and test flows. It performs shallow cloning, content analysis,
 and knowledge base updates to improve test generation accuracy.
 
-    Features:
-        - Clone GitHub repositories for test analysis
-        - Extract Playwright selectors from test files
-        - Scan examples directory for Python test files
-        - Parse page actions and element interactions
+Features:
+    ✓ Shallow cloning of GitHub repositories for efficiency
+    ✓ Automatic extraction of CSS/XPath selectors from test files
+    ✓ Test flow pattern recognition and cataloging
+    ✓ Knowledge base update automation with deduplication
+    ✓ Environment-based configuration for flexibility
+    ✓ Regex-based content parsing for selector identification
+    ✓ Structured JSON output for knowledge base integration
+    ✓ Error handling for missing repositories or files
 
 Environment Variables:
     GITHUB_REPO_URL: Target GitHub repository URL for indexing
@@ -28,7 +32,7 @@ Usage Examples:
 
 Indexing Process:
     - Shallow clone or update target repository
-    - Scan src/tests directory for Python test files
+    - Scan examples directory for Python test files
     - Extract selectors using regex patterns (#id, .class, text=value)
     - Identify page.* action patterns as test flows
     - Update knowledge base with new selectors and flows
