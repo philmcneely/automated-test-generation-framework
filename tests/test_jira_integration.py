@@ -66,12 +66,7 @@ class TestJiraReporter:
         """Test initialization with missing credentials in live mode."""
         with patch.dict("os.environ", {}, clear=True):
             with pytest.raises(ValueError, match="Jira credentials must be provided"):
-                JiraReporter(
-                    base_url="https://dummy.atlassian.net",
-                    username="dummy@example.com",
-                    token="dummy-token",
-                    dry_run=False,
-                )
+                JiraReporter(dry_run=False)
 
     def test_format_test_result_comment_passed(self):
         """Test formatting of passed test result."""
