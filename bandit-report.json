@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2025-09-11T17:30:37Z",
+  "generated_at": "2025-09-11T17:48:18Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 16,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 16,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 954,
+      "loc": 958,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -115,7 +115,7 @@
       "SEVERITY.LOW": 2,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 210,
+      "loc": 214,
       "nosec": 0,
       "skipped_tests": 0
     }
@@ -516,7 +516,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "145 \n146             result = subprocess.run(\n147                 cmd, capture_output=True, text=True, timeout=120  # 2 minute timeout\n148             )\n149 \n",
+      "code": "147 \n148             result = subprocess.run(\n149                 cmd, capture_output=True, text=True, timeout=120  # 2 minute timeout\n150             )\n151 \n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "src/validator/test_validator.py",
@@ -527,11 +527,11 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 146,
+      "line_number": 148,
       "line_range": [
-        146,
-        147,
-        148
+        148,
+        149,
+        150
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.8.6/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
