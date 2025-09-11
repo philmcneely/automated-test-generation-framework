@@ -3,8 +3,9 @@ name: Index Knowledge Base
 on:
   schedule:
     - cron: "0 3 * * *"
-  push:
-    branches: [ main ]
+
+permissions:
+  contents: write
 
 jobs:
   index:
@@ -23,7 +24,7 @@ jobs:
 
       - name: Run GitHub indexer
         env:
-          GITHUB_REPO_URL: ${{ secrets.GITHUB_REPO_URL }}
+          GITHUB_REPO_URL: https://github.com/philmcneely/playwright-ai-framework.git
           GITHUB_BRANCH: main
         run: make index-github
 
