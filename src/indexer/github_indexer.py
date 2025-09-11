@@ -1,3 +1,61 @@
+"""
+GitHub Repository Indexer - Knowledge Base Automation
+
+This module provides automated extraction and indexing of test patterns from
+GitHub repositories to continuously update the knowledge base with real-world
+selectors and test flows. It performs shallow cloning, content analysis,
+and knowledge base updates to improve test generation accuracy.
+
+Features:
+    ✓ Shallow cloning of GitHub repositories for efficiency
+    ✓ Automatic extraction of CSS/XPath selectors from test files
+    ✓ Test flow pattern recognition and cataloging
+    ✓ Knowledge base update automation with deduplication
+    ✓ Environment-based configuration for flexibility
+    ✓ Regex-based content parsing for selector identification
+    ✓ Structured JSON output for knowledge base integration
+    ✓ Error handling for missing repositories or files
+
+Environment Variables:
+    GITHUB_REPO_URL: Target GitHub repository URL for indexing
+    GITHUB_BRANCH: Repository branch to index (default: main)
+    GITHUB_CLONE_DIR: Local directory for repository cloning (default: ./tmp_repo)
+    KB_PATH: Knowledge base file path (default: knowledge_base_schema.json)
+
+Usage Examples:
+    # Index with environment variables
+    export GITHUB_REPO_URL="https://github.com/user/repo.git"
+    python src/indexer/github_indexer.py
+
+    # Index specific branch
+    GITHUB_BRANCH=develop python src/indexer/github_indexer.py
+
+Indexing Process:
+    - Shallow clone or update target repository
+    - Scan src/tests directory for Python test files
+    - Extract selectors using regex patterns (#id, .class, text=value)
+    - Identify page.* action patterns as test flows
+    - Update knowledge base with new selectors and flows
+    - Maintain existing data while adding discoveries
+
+Knowledge Base Integration:
+    - Adds new selectors to page_objects array
+    - Creates test_flows from discovered action sequences
+    - Preserves existing knowledge base structure
+    - Provides incremental updates without duplication
+
+Dependencies:
+    - json: Knowledge base file operations
+    - os: Environment variable access
+    - re: Selector pattern matching
+    - subprocess: Git operations for repository management
+    - pathlib: File system path operations
+    - typing: Type annotations for better code clarity
+
+Author: PMAC
+Date: 2025-09-11
+"""
+
 import json
 import os
 import re
