@@ -49,5 +49,27 @@
         "password": "SuperSecretPassword!"
       }
     }
-  ]
+  ],
+  "test_patterns": {
+    "decorators": {
+      "required": [
+        "@screenshot_on_failure",
+        "@pytest.mark.asyncio"
+      ],
+      "markers": [
+        "@pytest.mark.login",
+        "@pytest.mark.smoke", 
+        "@pytest.mark.regression",
+        "@pytest.mark.visual",
+        "@pytest.mark.security"
+      ]
+    },
+    "imports": [
+      "import pytest",
+      "from utils.decorators.screenshot_decorator import screenshot_on_failure"
+    ],
+    "function_signature": "async def test_function_name(app):",
+    "page_access": "app.login_page.page",
+    "navigation": "await app.login_page.navigate()"
+  }
 }

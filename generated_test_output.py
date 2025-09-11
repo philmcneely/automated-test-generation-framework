@@ -1,21 +1,16 @@
 # ===== Generated Playwright Test =====
-import os
-
 import pytest
-from playwright.sync_api import sync_playwright
-
-BASE_URL = os.getenv("APP_BASE_URL", "https://example.com")
+from utils.decorators.screenshot_decorator import screenshot_on_failure
 
 
-@pytest.mark.e2e  # type: ignore[misc]
-def test_login_happy_path() -> None:
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        page.goto(BASE_URL)
-        page.click("#login")
-        page.fill("#username", "user1")
-        page.fill("#password", "pass123")
-        page.click("#submit")
-        page.wait_for_selector("text=Welcome")
-        browser.close()
+@screenshot_on_failure
+@pytest.mark.login
+@pytest.mark.asyncio
+async def test_login_happy_path(app):
+    """Generated test using playwright-ai-framework patterns."""
+    await app.login_page.navigate()
+    await app.login_page.page.click("#login")
+    await app.login_page.page.fill("#username", "user1")
+    await app.login_page.page.fill("#password", "pass123")
+    await app.login_page.page.click("#submit")
+    await app.login_page.page.wait_for_selector("text=Welcome")

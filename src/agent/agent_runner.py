@@ -100,23 +100,48 @@ def _generate_test_function_name(title: str) -> str:
 
 
 def _build_test_code(test_func_name: str, base_url: str, body_lines: List[str]) -> str:
-    """Build the complete test code structure."""
+    """Build the complete test code structure using the playwright-ai-framework patterns."""
     code_lines = [
-        "import os",
         "import pytest",
-        "from playwright.sync_api import sync_playwright",
+        "from utils.decorators.screenshot_decorator import screenshot_on_failure",
         "",
-        f'BASE_URL = os.getenv("APP_BASE_URL", "{base_url}")',
-        "",
-        "@pytest.mark.e2e",
-        f"def {test_func_name}():",
-        "    with sync_playwright() as p:",
-        "        browser = p.chromium.launch(headless=True)",
-        "        page = browser.new_page()",
-        "        page.goto(BASE_URL)",
+        "@screenshot_on_failure",
+        "@pytest.mark.login",
+        "@pytest.mark.asyncio",
+        f"async def {test_func_name}(app):",
+        '    """Generated test using playwright-ai-framework patterns."""',
+        '    # Note: This test should be placed in the playwright-ai-framework/tests/generated/ directory',
     ]
-    code_lines.extend(body_lines)
-    code_lines.append("        browser.close()")
+    
+    # Convert sync playwright steps to framework-based steps
+    for line in body_lines:
+        # Convert page operations to app-based operations
+        if "page.click(" in line:
+            # Extract selector and convert to app.login_page pattern
+            selector = line.split("'")[1] if "'" in line else line.split('"')[1]
+            converted_line = f"    await app.login_page.page.click('{selector}')"
+            code_lines.append(converted_line)
+        elif "page.fill(" in line:
+            # Extract selector and value
+            parts = line.split("'") if "'" in line else line.split('"')
+            if len(parts) >= 3:
+                selector = parts[1]
+                value = parts[3]
+                converted_line = f"    await app.login_page.page.fill('{selector}', '{value}')"
+                code_lines.append(converted_line)
+        elif "page.wait_for_selector(" in line:
+            # Keep wait operations as-is but use app.login_page.page
+            selector = line.split("'")[1] if "'" in line else line.split('"')[1]
+            converted_line = f"    await app.login_page.page.wait_for_selector('{selector}')"
+            code_lines.append(converted_line)
+        elif "page.goto(" in line:
+            # Use app navigation
+            code_lines.append("    await app.login_page.navigate()")
+        else:
+            # Keep other lines as-is but make them async if needed
+            converted_line = line.replace("        page.", "    await app.login_page.page.")
+            code_lines.append(converted_line)
+    
     return "\n".join(code_lines)
 
 
