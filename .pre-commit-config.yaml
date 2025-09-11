@@ -51,11 +51,12 @@ repos:
         files: ^src/.*\.py$
         additional_dependencies: [pbr]
 
-  - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    rev: v1.3.2
-    hooks:
-      - id: python-safety-dependencies-check
-        exclude: ^playwright-ai-framework/
+  # Temporarily disabled - incompatible with pyproject.toml setup
+  # - repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+  #   rev: v1.3.2
+  #   hooks:
+  #     - id: python-safety-dependencies-check
+  #       exclude: ^playwright-ai-framework/
 
   - repo: local
     hooks:

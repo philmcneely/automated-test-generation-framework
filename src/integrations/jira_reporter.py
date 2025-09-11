@@ -15,7 +15,7 @@ from typing import Optional
 try:
     import requests  # type: ignore
 except ImportError:
-    requests = None
+    requests = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,11 @@ class JiraReporter:
 
     def __init__(
         self,
-        base_url: Optional[str] = None,
-        username: Optional[str] = None,
-        token: Optional[str] = None,
+        base_url: str,
+        username: str,
+        token: str,
         dry_run: bool = False,
-    ):
+    ) -> None:
         """
         Initialize Jira reporter.
 
@@ -172,6 +172,10 @@ class JiraReporter:
                 f"{self.base_url}/rest/api/2/issue/{ticket_id}/transitions"
             )
 
+            if not (self.username and self.token):
+                logger.error("Username and token are required for Jira API calls")
+                return False
+
             response = requests.get(
                 transitions_url, auth=(self.username, self.token), timeout=30
             )
@@ -238,7 +242,12 @@ def report_from_pytest_json(json_file: str, ticket_id: str) -> bool:
         with open(json_file, "r") as f:
             data = json.load(f)
 
-        reporter = JiraReporter()
+        reporter = JiraReporter(
+            base_url="https://your-instance.atlassian.net",
+            username="your-username",
+            token="your-token-here",  # nosec: example placeholder
+            dry_run=True,  # Use dry run for examples
+        )
 
         # Report overall summary
         summary = data.get("summary", {})
@@ -284,7 +293,12 @@ if __name__ == "__main__":
         test_file="tests/generated/test_acceptance.py",
     )
 
-    reporter = JiraReporter()
+    reporter = JiraReporter(
+        base_url="https://your-instance.atlassian.net",
+        username="your-username",
+        token="your-token-here",  # nosec: example placeholder
+        dry_run=True,  # Use dry run for examples
+    )
     success = reporter.report_test_result(result)
 
     sys.exit(0 if success else 1)

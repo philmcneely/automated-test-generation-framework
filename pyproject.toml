@@ -1,0 +1,142 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "automated-test-generation-framework"
+version = "0.1.0"
+description = "An automated test generation framework for Python/Playwright/pytest applications with Jira integration"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Phil McNeely", email = "phil@example.com"}
+]
+keywords = ["testing", "automation", "playwright", "pytest", "jira", "test-generation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+dependencies = [
+    "requests>=2.28.0",
+    "pyyaml>=6.0",
+    "playwright>=1.20.0",
+    "pytest>=7.0.0",
+    "pytest-playwright>=0.3.0",
+    "python-dotenv>=0.19.0",
+    "gitpython>=3.1.0",
+    "coverage>=6.0",
+    "urllib3>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.0",
+    "flake8>=4.0",
+    "mypy>=0.950",
+    "bandit>=1.7",
+    "safety>=2.0",
+    "pre-commit>=2.17",
+    "pytest-cov>=3.0",
+    "pytest-mock>=3.7",
+    "allure-pytest>=2.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/philmcneely/automated-test-generation-framework"
+Documentation = "https://github.com/philmcneely/automated-test-generation-framework/docs"
+Repository = "https://github.com/philmcneely/automated-test-generation-framework"
+Issues = "https://github.com/philmcneely/automated-test-generation-framework/issues"
+
+[project.scripts]
+atgf-generate = "src.agent.agent_runner:main"
+atgf-index = "src.indexer.github_indexer:main"
+atgf-poll = "src.poller.jira_poller_with_validation:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml", "*.json", "*.md"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | build
+  | dist
+  | playwright-ai-framework
+)/
+'''
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = [
+    "playwright-ai-framework",
+    "tmp_repo",
+    "test_artifacts",
+    "__pycache__",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/playwright-ai-framework/*",
+    "*/tmp_repo/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-report=term-missing",
+]
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "slow: marks tests as slow running",
+]
