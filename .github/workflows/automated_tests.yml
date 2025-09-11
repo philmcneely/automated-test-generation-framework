@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,7 +26,7 @@ jobs:
 
       - name: Run tests
         env:
-          APP_BASE_URL: ${{ secrets.APP_BASE_URL || 'https://example.com' }}
+          APP_BASE_URL: https://example.com
         run: pytest -v
 
       - name: Upload test artifacts

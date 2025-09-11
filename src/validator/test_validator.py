@@ -64,7 +64,17 @@ class ValidatorService:
 
         # Copy test to playwright framework's generated tests directory
         target_dir = self.playwright_path / "tests" / "generated"
-        target_dir.mkdir(exist_ok=True)
+
+        # Ensure the entire path exists (handles missing submodule)
+        if not self.playwright_path.exists():
+            return {
+                "success": False,
+                "error": f"Playwright framework not found at: {self.playwright_path}",
+                "test_file": test_file_path,
+                "validation_time": None,
+            }
+
+        target_dir.mkdir(parents=True, exist_ok=True)
 
         target_file = target_dir / test_path.name
 

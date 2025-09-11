@@ -1,4 +1,5 @@
-queued		fix: Remove push trigger from KB indexer - should only run on schedule	Automated Tests	main	push	17656384334	3s	2025-09-11T20:23:01Z
+completed	failure	feat: Make knowledge base indexing optional and configurable	Automated Tests	main	push	17656483806	1m29s	2025-09-11T20:27:30Z
+completed	failure	fix: Remove push trigger from KB indexer - should only run on schedule	Automated Tests	main	push	17656384334	3m2s	2025-09-11T20:23:01Z
 completed	failure	fix: Auto-detect repository URL in GitHub Actions environment	Index Knowledge Base	main	push	17656264043	35s	2025-09-11T20:17:53Z
 completed	failure	fix: Auto-detect repository URL in GitHub Actions environment	Automated Tests	main	push	17656264033	3m48s	2025-09-11T20:17:53Z
 completed	failure	feat: Add vector database protection rules	Index Knowledge Base	main	push	17656214015	38s	2025-09-11T20:15:44Z

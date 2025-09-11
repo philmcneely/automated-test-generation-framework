@@ -1,20 +1,110 @@
-index	Commit updated KB	﻿2025-09-11T20:18:24.2212266Z ##[group]Run git config user.name "auto-indexer"
-index	Commit updated KB	2025-09-11T20:18:24.2212616Z [36;1mgit config user.name "auto-indexer"[0m
-index	Commit updated KB	2025-09-11T20:18:24.2212976Z [36;1mgit config user.email "auto-indexer@users.noreply.github.com"[0m
-index	Commit updated KB	2025-09-11T20:18:24.2213334Z [36;1mgit add knowledge_base_schema.json[0m
-index	Commit updated KB	2025-09-11T20:18:24.2213671Z [36;1mgit commit -m "chore: update KB via indexer" || echo "No changes"[0m
-index	Commit updated KB	2025-09-11T20:18:24.2213992Z [36;1mgit push[0m
-index	Commit updated KB	2025-09-11T20:18:24.2245652Z shell: /usr/bin/bash -e {0}
-index	Commit updated KB	2025-09-11T20:18:24.2245868Z env:
-index	Commit updated KB	2025-09-11T20:18:24.2246111Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.18/x64
-index	Commit updated KB	2025-09-11T20:18:24.2246505Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.18/x64/lib/pkgconfig
-index	Commit updated KB	2025-09-11T20:18:24.2246901Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
-index	Commit updated KB	2025-09-11T20:18:24.2247499Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
-index	Commit updated KB	2025-09-11T20:18:24.2247863Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
-index	Commit updated KB	2025-09-11T20:18:24.2248248Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.18/x64/lib
-index	Commit updated KB	2025-09-11T20:18:24.2248532Z ##[endgroup]
-index	Commit updated KB	2025-09-11T20:18:24.2398305Z [main f31087b] chore: update KB via indexer
-index	Commit updated KB	2025-09-11T20:18:24.2398853Z  1 file changed, 1 insertion(+), 1 deletion(-)
-index	Commit updated KB	2025-09-11T20:18:24.4488166Z remote: Permission to philmcneely/automated-test-generation-framework.git denied to github-actions[bot].
-index	Commit updated KB	2025-09-11T20:18:24.4490296Z fatal: unable to access 'https://github.com/philmcneely/automated-test-generation-framework/': The requested URL returned error: 403
-index	Commit updated KB	2025-09-11T20:18:24.4518887Z ##[error]Process completed with exit code 128.
+test	Run tests	﻿2025-09-11T20:28:55.5471449Z ##[group]Run pytest -v
+test	Run tests	2025-09-11T20:28:55.5471720Z [36;1mpytest -v[0m
+test	Run tests	2025-09-11T20:28:55.5503947Z shell: /usr/bin/bash -e {0}
+test	Run tests	2025-09-11T20:28:55.5504171Z env:
+test	Run tests	2025-09-11T20:28:55.5504571Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.18/x64
+test	Run tests	2025-09-11T20:28:55.5505028Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.18/x64/lib/pkgconfig
+test	Run tests	2025-09-11T20:28:55.5505426Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
+test	Run tests	2025-09-11T20:28:55.5505777Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
+test	Run tests	2025-09-11T20:28:55.5506118Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.18/x64
+test	Run tests	2025-09-11T20:28:55.5506489Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.18/x64/lib
+test	Run tests	2025-09-11T20:28:55.5506797Z   APP_BASE_URL: https://example.com
+test	Run tests	2025-09-11T20:28:55.5507030Z ##[endgroup]
+test	Run tests	2025-09-11T20:28:56.8898931Z ============================= test session starts ==============================
+test	Run tests	2025-09-11T20:28:56.8899651Z platform linux -- Python 3.10.18, pytest-8.4.2, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.10.18/x64/bin/python
+test	Run tests	2025-09-11T20:28:56.8900390Z cachedir: .pytest_cache
+test	Run tests	2025-09-11T20:28:56.8900926Z rootdir: /home/runner/work/automated-test-generation-framework/automated-test-generation-framework
+test	Run tests	2025-09-11T20:28:56.8901490Z configfile: pytest.ini
+test	Run tests	2025-09-11T20:28:56.8901736Z testpaths: tests
+test	Run tests	2025-09-11T20:28:56.8902201Z plugins: mock-3.15.0, playwright-0.7.1, langsmith-0.4.27, base-url-2.1.0, anyio-4.10.0, cov-7.0.0, xdist-3.8.0
+test	Run tests	2025-09-11T20:28:56.9886359Z collecting ... collected 61 items
+test	Run tests	2025-09-11T20:28:56.9886716Z
+test	Run tests	2025-09-11T20:28:56.9904372Z tests/test_agent_runner_pom.py::TestPOMTestGeneratorInitialization::test_load_json_success PASSED [  1%]
+test	Run tests	2025-09-11T20:28:56.9918640Z tests/test_agent_runner_pom.py::TestPOMTestGeneratorInitialization::test_to_snake_case_conversion PASSED [  3%]
+test	Run tests	2025-09-11T20:28:56.9927592Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_simple_test PASSED [  4%]
+test	Run tests	2025-09-11T20:28:56.9936339Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_with_raw_selectors PASSED [  6%]
+test	Run tests	2025-09-11T20:28:56.9945121Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_with_page_navigation PASSED [  8%]
+test	Run tests	2025-09-11T20:28:56.9954084Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_with_special_mappings PASSED [  9%]
+test	Run tests	2025-09-11T20:28:56.9963657Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_with_unsupported_action PASSED [ 11%]
+test	Run tests	2025-09-11T20:28:56.9972599Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_function_name_sanitization PASSED [ 13%]
+test	Run tests	2025-09-11T20:28:56.9981319Z tests/test_agent_runner_pom.py::TestTestGeneration::test_generate_test_with_empty_criteria PASSED [ 14%]
+test	Run tests	2025-09-11T20:28:57.0001884Z tests/test_agent_runner_pom.py::TestFileOperations::test_generate_from_files_success PASSED [ 16%]
+test	Run tests	2025-09-11T20:28:57.0018145Z tests/test_agent_runner_pom.py::TestFileOperations::test_generate_from_files_with_output PASSED [ 18%]
+test	Run tests	2025-09-11T20:28:57.0027002Z tests/test_agent_runner_pom.py::TestEdgeCases::test_missing_ticket_fields PASSED [ 19%]
+test	Run tests	2025-09-11T20:28:57.0035615Z tests/test_agent_runner_pom.py::TestEdgeCases::test_missing_kb_fields PASSED [ 21%]
+test	Run tests	2025-09-11T20:28:57.0044860Z tests/test_agent_runner_pom.py::TestEdgeCases::test_malformed_selectors PASSED [ 22%]
+test	Run tests	2025-09-11T20:28:57.0053593Z tests/test_github_indexer.py::TestGitHubIndexerInitialization::test_init_with_all_params PASSED [ 24%]
+test	Run tests	2025-09-11T20:28:57.0062487Z tests/test_github_indexer.py::TestGitHubIndexerInitialization::test_init_with_minimal_params PASSED [ 26%]
+test	Run tests	2025-09-11T20:28:57.0078677Z tests/test_github_indexer.py::TestGitHubIndexerInitialization::test_init_with_env_vars PASSED [ 27%]
+test	Run tests	2025-09-11T20:28:57.0553703Z tests/test_github_indexer.py::TestGitHubIndexerInitialization::test_init_without_repo_url_raises_error FAILED [ 29%]
+test	Run tests	2025-09-11T20:28:57.0562099Z tests/test_github_indexer.py::TestElementNameGeneration::test_id_selector_button PASSED [ 31%]
+test	Run tests	2025-09-11T20:28:57.0570691Z tests/test_github_indexer.py::TestElementNameGeneration::test_id_selector_field PASSED [ 32%]
+test	Run tests	2025-09-11T20:28:57.0579323Z tests/test_github_indexer.py::TestElementNameGeneration::test_id_selector_element PASSED [ 34%]
+test	Run tests	2025-09-11T20:28:57.0588983Z tests/test_github_indexer.py::TestElementNameGeneration::test_class_selector PASSED [ 36%]
+test	Run tests	2025-09-11T20:28:57.0600070Z tests/test_github_indexer.py::TestElementNameGeneration::test_text_selector PASSED [ 37%]
+test	Run tests	2025-09-11T20:28:57.0613488Z tests/test_github_indexer.py::TestElementNameGeneration::test_attribute_selector PASSED [ 39%]
+test	Run tests	2025-09-11T20:28:57.0624700Z tests/test_github_indexer.py::TestElementNameGeneration::test_tag_selector PASSED [ 40%]
+test	Run tests	2025-09-11T20:28:57.0642227Z tests/test_github_indexer.py::TestSelectorExtraction::test_extract_id_selectors PASSED [ 42%]
+test	Run tests	2025-09-11T20:28:57.0652198Z tests/test_github_indexer.py::TestSelectorExtraction::test_extract_class_selectors PASSED [ 44%]
+test	Run tests	2025-09-11T20:28:57.0660244Z tests/test_github_indexer.py::TestSelectorExtraction::test_extract_mixed_selectors PASSED [ 45%]
+test	Run tests	2025-09-11T20:28:57.0668770Z tests/test_github_indexer.py::TestSelectorExtraction::test_no_duplicate_selectors PASSED [ 47%]
+test	Run tests	2025-09-11T20:28:57.0678691Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_click_action PASSED [ 49%]
+test	Run tests	2025-09-11T20:28:57.0689209Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_fill_action PASSED [ 50%]
+test	Run tests	2025-09-11T20:28:57.0699763Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_fill_action_with_email PASSED [ 52%]
+test	Run tests	2025-09-11T20:28:57.0710905Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_goto_action PASSED [ 54%]
+test	Run tests	2025-09-11T20:28:57.0723315Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_wait_action PASSED [ 55%]
+test	Run tests	2025-09-11T20:28:57.0735840Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_expect_action PASSED [ 57%]
+test	Run tests	2025-09-11T20:28:57.0746563Z tests/test_github_indexer.py::TestPageActionParsing::test_parse_unknown_action PASSED [ 59%]
+test	Run tests	2025-09-11T20:28:57.0768456Z tests/test_github_indexer.py::TestGitOperations::test_shallow_clone_new_repo PASSED [ 60%]
+test	Run tests	2025-09-11T20:28:57.0789512Z tests/test_github_indexer.py::TestGitOperations::test_shallow_clone_update_existing PASSED [ 62%]
+test	Run tests	2025-09-11T20:28:57.0806177Z tests/test_github_indexer.py::TestKnowledgeBaseUpdate::test_update_kb_new_file PASSED [ 63%]
+test	Run tests	2025-09-11T20:28:57.0845324Z tests/test_github_indexer.py::TestKnowledgeBaseUpdate::test_update_kb_existing_file PASSED [ 65%]
+test	Run tests	2025-09-11T20:28:57.0884240Z tests/test_github_indexer.py::TestKnowledgeBaseUpdate::test_update_kb_no_duplicates PASSED [ 67%]
+test	Run tests	2025-09-11T20:28:57.0918108Z tests/test_github_indexer.py::TestIntegration::test_run_complete_process PASSED [ 68%]
+test	Run tests	2025-09-11T20:28:57.0929167Z tests/test_jira_poller_with_validation.py::TestJiraPollerInitialization::test_init_with_all_params PASSED [ 70%]
+test	Run tests	2025-09-11T20:28:57.0950181Z tests/test_jira_poller_with_validation.py::TestJiraPollerInitialization::test_init_with_env_vars PASSED [ 72%]
+test	Run tests	2025-09-11T20:28:57.0962717Z tests/test_jira_poller_with_validation.py::TestJiraPollerInitialization::test_init_without_credentials_raises_error PASSED [ 73%]
+test	Run tests	2025-09-11T20:28:57.0973042Z tests/test_jira_poller_with_validation.py::TestJiraPollerInitialization::test_init_with_defaults PASSED [ 75%]
+test	Run tests	2025-09-11T20:28:57.0999289Z tests/test_jira_poller_with_validation.py::TestTicketFetching::test_fetch_tickets_success PASSED [ 77%]
+test	Run tests	2025-09-11T20:28:57.1013850Z tests/test_jira_poller_with_validation.py::TestTicketFetching::test_fetch_tickets_http_error PASSED [ 78%]
+test	Run tests	2025-09-11T20:28:57.1055383Z tests/test_jira_poller_with_validation.py::TestTestValidation::test_validate_and_save_test_success PASSED [ 80%]
+test	Run tests	2025-09-11T20:28:57.1102922Z tests/test_jira_poller_with_validation.py::TestTestValidation::test_validate_and_save_test_failure PASSED [ 81%]
+test	Run tests	2025-09-11T20:28:57.1142543Z tests/test_jira_poller_with_validation.py::TestTicketProcessing::test_process_ticket_with_acceptance_criteria PASSED [ 83%]
+test	Run tests	2025-09-11T20:28:57.1179513Z tests/test_jira_poller_with_validation.py::TestTicketProcessing::test_process_ticket_without_acceptance_criteria PASSED [ 85%]
+test	Run tests	2025-09-11T20:28:57.1194735Z tests/test_jira_poller_with_validation.py::TestMainLoop::test_run_single_iteration PASSED [ 86%]
+test	Run tests	2025-09-11T20:28:57.1209731Z tests/test_jira_poller_with_validation.py::TestMainLoop::test_run_with_exception_handling PASSED [ 88%]
+test	Run tests	2025-09-11T20:28:57.1218443Z tests/test_validator.py::TestValidatorUnit::test_validator_initialization PASSED [ 90%]
+test	Run tests	2025-09-11T20:28:57.1227270Z tests/test_validator.py::TestValidatorUnit::test_validate_nonexistent_test PASSED [ 91%]
+test	Run tests	2025-09-11T20:28:57.5026670Z tests/test_validator.py::TestValidatorUnit::test_validate_valid_test_structure FAILED [ 93%]
+test	Run tests	2025-09-11T20:28:57.5037952Z tests/test_validator.py::TestValidatorUnit::test_prepare_test_for_validation PASSED [ 95%]
+test	Run tests	2025-09-11T20:28:57.5046778Z tests/test_validator.py::TestValidatorUnit::test_generate_validation_report_success PASSED [ 96%]
+test	Run tests	2025-09-11T20:28:57.5055986Z tests/test_validator.py::TestValidatorUnit::test_generate_validation_report_mixed PASSED [ 98%]
+test	Run tests	2025-09-11T20:28:57.5862823Z tests/test_validator.py::TestValidatorIntegration::test_validator_with_real_test_structure FAILED [100%]
+test	Run tests	2025-09-11T20:28:57.5863551Z
+test	Run tests	2025-09-11T20:28:57.5863720Z =================================== FAILURES ===================================
+test	Run tests	2025-09-11T20:28:57.5864634Z ___ TestGitHubIndexerInitialization.test_init_without_repo_url_raises_error ____
+test	Run tests	2025-09-11T20:28:57.5865435Z tests/test_github_indexer.py:65: in test_init_without_repo_url_raises_error
+test	Run tests	2025-09-11T20:28:57.5866180Z     with pytest.raises(ValueError, match="Repository URL must be provided"):
+test	Run tests	2025-09-11T20:28:57.5866767Z E   Failed: DID NOT RAISE <class 'ValueError'>
+test	Run tests	2025-09-11T20:28:57.5867334Z _____________ TestValidatorUnit.test_validate_valid_test_structure _____________
+test	Run tests	2025-09-11T20:28:57.5868008Z tests/test_validator.py:84: in test_validate_valid_test_structure
+test	Run tests	2025-09-11T20:28:57.5868533Z     result = validator.validate_test(temp_path)
+test	Run tests	2025-09-11T20:28:57.5869013Z src/validator/test_validator.py:67: in validate_test
+test	Run tests	2025-09-11T20:28:57.5869476Z     target_dir.mkdir(exist_ok=True)
+test	Run tests	2025-09-11T20:28:57.5870021Z /opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/pathlib.py:1175: in mkdir
+test	Run tests	2025-09-11T20:28:57.5870642Z     self._accessor.mkdir(self, mode)
+test	Run tests	2025-09-11T20:28:57.5871316Z E   FileNotFoundError: [Errno 2] No such file or directory: 'playwright-ai-framework/tests/generated'
+test	Run tests	2025-09-11T20:28:57.5872180Z _______ TestValidatorIntegration.test_validator_with_real_test_structure _______
+test	Run tests	2025-09-11T20:28:57.5873273Z tests/test_validator.py:193: in test_validator_with_real_test_structure
+test	Run tests	2025-09-11T20:28:57.5873838Z     result = validator.validate_test(temp_path)
+test	Run tests	2025-09-11T20:28:57.5874294Z src/validator/test_validator.py:67: in validate_test
+test	Run tests	2025-09-11T20:28:57.5874917Z     target_dir.mkdir(exist_ok=True)
+test	Run tests	2025-09-11T20:28:57.5875558Z /opt/hostedtoolcache/Python/3.10.18/x64/lib/python3.10/pathlib.py:1175: in mkdir
+test	Run tests	2025-09-11T20:28:57.5876154Z     self._accessor.mkdir(self, mode)
+test	Run tests	2025-09-11T20:28:57.5876802Z E   FileNotFoundError: [Errno 2] No such file or directory: 'playwright-ai-framework/tests/generated'
+test	Run tests	2025-09-11T20:28:57.5877503Z =========================== short test summary info ============================
+test	Run tests	2025-09-11T20:28:57.5878548Z FAILED tests/test_github_indexer.py::TestGitHubIndexerInitialization::test_init_without_repo_url_raises_error - Failed: DID NOT RAISE <class 'ValueError'>
+test	Run tests	2025-09-11T20:28:57.5880256Z FAILED tests/test_validator.py::TestValidatorUnit::test_validate_valid_test_structure - FileNotFoundError: [Errno 2] No such file or directory: 'playwright-ai-framework/tests/generated'
+test	Run tests	2025-09-11T20:28:57.5882127Z FAILED tests/test_validator.py::TestValidatorIntegration::test_validator_with_real_test_structure - FileNotFoundError: [Errno 2] No such file or directory: 'playwright-ai-framework/tests/generated'
+test	Run tests	2025-09-11T20:28:57.5883340Z ========================= 3 failed, 58 passed in 0.64s =========================
+test	Run tests	2025-09-11T20:28:57.6541283Z ##[error]Process completed with exit code 1.

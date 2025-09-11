@@ -60,8 +60,15 @@ class TestGitHubIndexerInitialization:
         assert indexer.clone_dir == Path("/env/clone")
         assert indexer.kb_path == Path("/env/kb.json")
 
-    def test_init_without_repo_url_raises_error(self) -> None:
+    def test_init_without_repo_url_raises_error(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test that missing repo_url raises ValueError."""
+        # Mock environment to not be in GitHub Actions
+        monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+        monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+        monkeypatch.delenv("GITHUB_REPO_URL", raising=False)
+
         with pytest.raises(ValueError, match="Repository URL must be provided"):
             GitHubIndexer()
 
