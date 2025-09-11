@@ -94,6 +94,12 @@ class GitHubIndexer:
             branch if branch != "main" else (os.getenv("GITHUB_BRANCH") or "main")
         )
 
+        # Auto-detect repository URL in GitHub Actions environment
+        if not self.repo_url and os.getenv("GITHUB_ACTIONS"):
+            github_repository = os.getenv("GITHUB_REPOSITORY")
+            if github_repository:
+                self.repo_url = f"https://github.com/{github_repository}.git"
+
         if not self.repo_url:
             raise ValueError(
                 "Repository URL must be provided via repo_url parameter or GITHUB_REPO_URL environment variable"
