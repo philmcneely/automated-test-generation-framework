@@ -30,7 +30,9 @@ from typing import Optional
 
 
 class ValidatorService:
-    def __init__(self, playwright_framework_path: str = "playwright-ai-framework") -> None:
+    def __init__(
+        self, playwright_framework_path: str = "playwright-ai-framework"
+    ) -> None:
         """
         Initialize the test validator with path to playwright framework.
 
@@ -209,7 +211,9 @@ class ValidatorService:
 
         return results
 
-    def generate_validation_report(self, results: list, output_file: Optional[str] = None) -> str:
+    def generate_validation_report(
+        self, results: list, output_file: Optional[str] = None
+    ) -> str:
         """
         Generate a validation report from results.
 

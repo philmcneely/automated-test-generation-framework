@@ -53,13 +53,9 @@ from src.agent.agent_runner import (
     generate_playwright_test,
     load_json,
 )
-from src.agent.agent_runner_pom import (
-    generate_pom_playwright_test,
-)
+from src.agent.agent_runner_pom import generate_pom_playwright_test
 from src.agent.agent_runner_pom import load_json as load_json_pom
-from src.agent.agent_runner_pom import (
-    to_snake_case,
-)
+from src.agent.agent_runner_pom import to_snake_case
 
 
 class TestAgentRunnerComprehensive:

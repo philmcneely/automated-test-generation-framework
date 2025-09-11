@@ -35,7 +35,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 import requests
 

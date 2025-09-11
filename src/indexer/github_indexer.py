@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List, Tuple
 
 REPO_URL: str = os.getenv("GITHUB_REPO_URL")  # type: ignore
 BRANCH: str = os.getenv("GITHUB_BRANCH", "main")
@@ -61,7 +61,7 @@ def extract_tests() -> Tuple[List[str], List[Dict[str, Any]]]:
 def update_kb(new_selectors: List[str], new_flows: List[Dict[str, Any]]) -> None:
     kb: Dict[str, Any] = {"page_objects": [], "test_flows": [], "test_data": []}
     if KB_PATH.exists():
-        with open(KB_PATH, 'r') as f:
+        with open(KB_PATH, "r") as f:
             kb = json.load(f)
     if not kb["page_objects"]:
         kb["page_objects"].append(

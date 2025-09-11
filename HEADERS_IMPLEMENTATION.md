@@ -16,7 +16,7 @@ Each file will get a customized header that:
 - [ ] src/agent/agent_runner_pom.py - POM-based test generation
 - [ ] src/agent/prompt.md - AI prompting guidelines
 
-### Poller Files  
+### Poller Files
 - [ ] src/poller/jira_poller.py - Jira ticket polling
 - [ ] src/poller/jira_poller_with_validation.py - Enhanced polling with validation
 

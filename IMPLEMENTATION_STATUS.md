@@ -190,11 +190,11 @@ The knowledge base (`knowledge_base_schema.json`) contains:
 
 ## 📊 Current Capabilities
 
-✅ **Complete Pipeline**: Jira → Agent → Test Generation → CI/CD  
-✅ **Knowledge Base Integration**: Selector mapping and reuse  
-✅ **GitHub Integration**: Repository indexing and KB updates  
-✅ **Docker Support**: Containerized execution  
-✅ **CI/CD Ready**: GitHub Actions workflows  
-✅ **Extensible Architecture**: Modular design for easy enhancement  
+✅ **Complete Pipeline**: Jira → Agent → Test Generation → CI/CD
+✅ **Knowledge Base Integration**: Selector mapping and reuse
+✅ **GitHub Integration**: Repository indexing and KB updates
+✅ **Docker Support**: Containerized execution
+✅ **CI/CD Ready**: GitHub Actions workflows
+✅ **Extensible Architecture**: Modular design for easy enhancement
 
 The framework is ready for basic usage and can be extended based on specific requirements.
