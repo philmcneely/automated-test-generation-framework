@@ -1,0 +1,53 @@
+{
+  "page_objects": [
+    {
+      "id": "page_login",
+      "name": "LoginPage",
+      "selectors": [
+        {
+          "element": "username_field",
+          "selector": "#username"
+        },
+        {
+          "element": "password_field",
+          "selector": "#password"
+        },
+        {
+          "element": "login_button",
+          "selector": "button[type='submit']"
+        }
+      ]
+    }
+  ],
+  "test_flows": [
+    {
+      "id": "flow_login",
+      "name": "LoginFlow",
+      "steps": [
+        {
+          "action": "fill",
+          "target": "username_field",
+          "value": "{username}"
+        },
+        {
+          "action": "fill",
+          "target": "password_field",
+          "value": "{password}"
+        },
+        {
+          "action": "click",
+          "target": "login_button"
+        }
+      ]
+    }
+  ],
+  "test_data": [
+    {
+      "id": "data_login",
+      "dataset": {
+        "username": "tomsmith",
+        "password": "SuperSecretPassword!"
+      }
+    }
+  ]
+}

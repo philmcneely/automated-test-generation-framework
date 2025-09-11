@@ -1,0 +1,4 @@
+[submodule "playwright-ai-framework"]
+	path = playwright-ai-framework
+	url = https://github.com/philmcneely/playwright-ai-framework.git
+	branch = main

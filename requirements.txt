@@ -1,0 +1,9 @@
+jira
+playwright
+pytest
+pytest-playwright
+langchain
+openai
+requests
+pydantic
+pyyaml

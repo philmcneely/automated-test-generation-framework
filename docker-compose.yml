@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  agent:
+    build: .
+    environment:
+      - JIRA_BASE=${JIRA_BASE}
+      - JIRA_USER=${JIRA_USER}
+      - JIRA_TOKEN=${JIRA_TOKEN}
+      - APP_BASE_URL=${APP_BASE_URL}
+    command: python src/poller/jira_poller.py

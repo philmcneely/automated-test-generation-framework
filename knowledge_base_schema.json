@@ -1,0 +1,61 @@
+{
+  "page_objects": [
+    {
+      "id": "page_home",
+      "name": "HomePage",
+      "selectors": [
+        {
+          "element": "login_button",
+          "selector": "#login"
+        },
+        {
+          "element": "username_field",
+          "selector": "#username"
+        },
+        {
+          "element": "password_field",
+          "selector": "#password"
+        },
+        {
+          "element": "submit_button",
+          "selector": "#submit"
+        }
+      ]
+    }
+  ],
+  "test_flows": [
+    {
+      "id": "flow_login",
+      "name": "LoginFlow",
+      "steps": [
+        {
+          "action": "click",
+          "target": "login_button"
+        },
+        {
+          "action": "fill",
+          "target": "username_field",
+          "value": "{username}"
+        },
+        {
+          "action": "fill",
+          "target": "password_field",
+          "value": "{password}"
+        },
+        {
+          "action": "click",
+          "target": "submit_button"
+        }
+      ]
+    }
+  ],
+  "test_data": [
+    {
+      "id": "data_login",
+      "dataset": {
+        "username": "user1",
+        "password": "pass123"
+      }
+    }
+  ]
+}

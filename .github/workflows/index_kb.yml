@@ -1,0 +1,36 @@
+name: Index Knowledge Base
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  push:
+    branches: [ main ]
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install deps
+        run: pip install -r requirements.txt requests
+
+      - name: Run GitHub indexer
+        env:
+          GITHUB_REPO_URL: ${{ secrets.GITHUB_REPO_URL }}
+          GITHUB_BRANCH: main
+        run: make index-github
+
+      - name: Commit updated KB
+        run: |
+          git config user.name "auto-indexer"
+          git config user.email "auto-indexer@users.noreply.github.com"
+          git add knowledge_base_schema.json
+          git commit -m "chore: update KB via indexer" || echo "No changes"
+          git push

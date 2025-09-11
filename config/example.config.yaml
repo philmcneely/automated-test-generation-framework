@@ -1,0 +1,7 @@
+jira:
+  base_url: https://your-domain.atlassian.net
+  jql: project = ABC AND status in ("To Do", "In Progress")
+ci:
+  runner: github_actions
+app:
+  base_url: https://example.com

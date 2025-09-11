@@ -1,0 +1,28 @@
+{
+  "id": "ABC-123",
+  "title": "Login happy path",
+  "acceptance_criteria": [
+    {
+      "action": "click",
+      "target": "login_button"
+    },
+    {
+      "action": "fill",
+      "target": "username_field",
+      "value": "user1"
+    },
+    {
+      "action": "fill",
+      "target": "password_field",
+      "value": "pass123"
+    },
+    {
+      "action": "click",
+      "target": "submit_button"
+    },
+    {
+      "action": "assert_text",
+      "value": "Welcome"
+    }
+  ]
+}
