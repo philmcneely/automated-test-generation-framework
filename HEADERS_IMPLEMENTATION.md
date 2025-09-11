@@ -27,8 +27,8 @@ Each file will get a customized header that:
 - [ ] src/indexer/github_indexer.py - GitHub repository indexing
 
 ### Test Files
-- [ ] src/tests/generated_test_login_happy_path.py - Generated test example
-- [ ] src/tests/sample_test_playwright.py - Sample test template
+- [ ] examples/generated_test_login_happy_path.py - Generated test example
+- [ ] examples/sample_test_playwright.py - Sample test template
 
 ### Main Test Files
 - [ ] tests/test_agent_runner.py - Unit tests for agent runner

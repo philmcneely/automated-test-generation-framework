@@ -50,7 +50,7 @@ ls -la playwright-ai-framework/
 # Should show the framework files from your GitHub repo
 
 # Test the validation system
-python src/validator/test_validator.py --test src/tests/generated_test_login_happy_path.py
+python src/validator/test_validator.py --test examples/generated_test_login_happy_path.py
 ```
 
 ### Step 6: Commit the Changes

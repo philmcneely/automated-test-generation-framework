@@ -87,7 +87,7 @@ def test_login_happy_path():
 ### Test Execution
 ```bash
 export APP_BASE_URL=https://example.com
-pytest src/tests/generated_test_login_happy_path.py -v
+pytest examples/generated_test_login_happy_path.py -v
 ```
 
 **Result**: Test executes properly (fails as expected due to missing elements on example.com, demonstrating correct test structure)

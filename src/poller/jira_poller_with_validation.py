@@ -35,204 +35,254 @@ import subprocess  # nosec B404 # Safe usage: controlled execution of agent/vali
 import sys
 import tempfile
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import requests
 
-JIRA_BASE = os.getenv("JIRA_BASE")
-JIRA_USER = os.getenv("JIRA_USER")
-JIRA_TOKEN = os.getenv("JIRA_TOKEN")
-JQL = os.getenv("JIRA_JQL", 'project = ABC AND status in ("To Do", "In Progress")')
-POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
-headers = {"Accept": "application/json"}
 
+class JiraPollerWithValidation:
+    """
+    Jira Poller with integrated test validation and automated test generation.
 
-def fetch_tickets() -> List[Dict[str, Any]]:
-    if not JIRA_BASE or not JIRA_USER or not JIRA_TOKEN:
-        raise RuntimeError("Missing Jira configuration env vars")
-    url = f"{JIRA_BASE}/rest/api/3/search"
-    r = requests.get(
-        url,
-        headers=headers,
-        params={"jql": JQL, "maxResults": "50"},
-        auth=(JIRA_USER, JIRA_TOKEN),
-        timeout=30,
-    )
-    r.raise_for_status()
-    data = r.json()
-    return data.get("issues", [])  # type: ignore
+    This class provides automated polling of Jira tickets and generates validated
+    Playwright tests using the POM-based test generation framework.
+    """
 
+    def __init__(
+        self,
+        jira_base: Optional[str] = None,
+        jira_user: Optional[str] = None,
+        jira_token: Optional[str] = None,
+        jira_jql: Optional[str] = None,
+        poll_interval: int = 60,
+    ) -> None:
+        """
+        Initialize the Jira poller with configuration.
 
-def validate_and_save_test(test_content: str, ticket_id: str) -> bool:
-    """Validate generated test and save if it passes"""
-
-    # Create temporary file for validation
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as temp_file:
-        temp_file.write(test_content)
-        temp_test_path = temp_file.name
-
-    try:
-        # Validate the generated test
-        print(f"🔍 Validating generated test for ticket {ticket_id}")
-
-        validation_result = subprocess.run(  # nosec B603 # Safe: controlled execution of internal validator
-            [
-                sys.executable,
-                "src/validator/test_validator.py",
-                "--test",
-                temp_test_path,
-                "--framework-path",
-                "playwright-ai-framework",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=os.getcwd(),
+        Args:
+            jira_base: Jira instance URL (defaults to JIRA_BASE env var)
+            jira_user: Jira username (defaults to JIRA_USER env var)
+            jira_token: Jira API token (defaults to JIRA_TOKEN env var)
+            jira_jql: JQL query for filtering (defaults to JIRA_JQL env var)
+            poll_interval: Polling interval in seconds (default: 60)
+        """
+        self.jira_base = jira_base or os.getenv("JIRA_BASE")
+        self.jira_user = jira_user or os.getenv("JIRA_USER")
+        self.jira_token = jira_token or os.getenv("JIRA_TOKEN")
+        self.jira_jql = jira_jql or os.getenv(
+            "JIRA_JQL", 'project = ABC AND status in ("To Do", "In Progress")'
         )
+        self.poll_interval = poll_interval
 
-        if validation_result.returncode == 0:
-            print(f"✅ Test validation PASSED for ticket {ticket_id}")
-
-            # Save validated test to playwright-ai-framework
-            test_filename = (
-                f"playwright-ai-framework/tests/generated/"
-                f"test_generated_"
-                f"{ticket_id.lower().replace('-', '_')}.py"
+        if not all([self.jira_base, self.jira_user, self.jira_token]):
+            raise ValueError(
+                "Missing required Jira configuration. Please provide jira_base, jira_user, "
+                "and jira_token via parameters or environment variables (JIRA_BASE, JIRA_USER, JIRA_TOKEN)"
             )
 
-            # Ensure directory exists
-            os.makedirs(os.path.dirname(test_filename), exist_ok=True)
+        self.headers = {"Accept": "application/json"}
 
-            with open(test_filename, "w") as f:
-                f.write(test_content)
+    def fetch_tickets(self) -> List[Dict[str, Any]]:
+        """Fetch tickets from Jira using configured JQL query."""
+        url = f"{self.jira_base}/rest/api/3/search"
 
-            print(f"💾 Saved validated POM test to {test_filename}")
-            return True
+        # Prepare auth - only use if both user and token are provided
+        auth = None
+        if self.jira_user and self.jira_token:
+            auth = (self.jira_user, self.jira_token)
 
-        else:
-            print(f"❌ Test validation FAILED for ticket {ticket_id}")
-            print(f"📋 Validation error: {validation_result.stderr}")
-            print(f"📝 Validation output: {validation_result.stdout}")
+        response = requests.get(
+            url,
+            headers=self.headers,
+            params={"jql": self.jira_jql, "maxResults": "50"},
+            auth=auth,
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        return data.get("issues", [])  # type: ignore
 
-            # Optionally save failed test for debugging
-            failed_test_filename = (
-                f"failed_tests/"
-                f"test_generated_"
-                f"{ticket_id.lower().replace('-', '_')}_failed.py"
+    def validate_and_save_test(self, test_content: str, ticket_id: str) -> bool:
+        """Validate generated test and save if it passes"""
+
+        # Create temporary file for validation
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False
+        ) as temp_file:
+            temp_file.write(test_content)
+            temp_test_path = temp_file.name
+
+        try:
+            # Validate the generated test
+            print(f"🔍 Validating generated test for ticket {ticket_id}")
+
+            validation_result = subprocess.run(  # nosec B603 # Safe: controlled execution of internal validator
+                [
+                    sys.executable,
+                    "src/validator/test_validator.py",
+                    "--test",
+                    temp_test_path,
+                    "--framework-path",
+                    "playwright-ai-framework",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=os.getcwd(),
             )
-            os.makedirs(os.path.dirname(failed_test_filename), exist_ok=True)
-            with open(failed_test_filename, "w") as f:
-                f.write(test_content)
-            print(f"🗂️  Saved failed test for analysis: {failed_test_filename}")
-            return False
 
-    finally:
-        # Clean up temporary file
-        if os.path.exists(temp_test_path):
-            os.unlink(temp_test_path)
+            if validation_result.returncode == 0:
+                print(f"✅ Test validation PASSED for ticket {ticket_id}")
 
-
-def process_ticket(ticket: Dict[str, Any]) -> None:
-    """Process a single ticket through the agent pipeline with validation"""
-
-    # Extract relevant ticket information
-    ticket_data = {
-        "id": ticket.get("key", "unknown"),
-        "title": ticket.get("fields", {}).get("summary", "generated_test"),
-        "acceptance_criteria": [],
-    }
-
-    # Parse acceptance criteria from description or custom fields
-    description = ticket.get("fields", {}).get("description", "")
-    if description:
-        # Simple parsing - look for bullet points or numbered lists
-        lines = description.split("\n")
-        for line in lines:
-            line = line.strip()
-            if line.startswith("-") or line.startswith("*") or line.startswith("1."):
-                # Simple heuristic for acceptance criteria
-                ticket_data["acceptance_criteria"].append(
-                    {
-                        "action": "click",  # Default action
-                        "target": "unknown",
-                        "value": line.strip("-* 1234567890."),
-                    }
+                # Save validated test to playwright-ai-framework
+                test_filename = (
+                    f"playwright-ai-framework/tests/generated/"
+                    f"test_generated_"
+                    f"{ticket_id.lower().replace('-', '_')}.py"
                 )
 
-    # If no acceptance criteria found, create a basic test
-    if not ticket_data["acceptance_criteria"]:
-        ticket_data["acceptance_criteria"] = [
-            {"action": "goto", "target": "/"},
-            {"action": "assert_text", "value": "Welcome"},
-        ]
+                # Ensure directory exists
+                os.makedirs(os.path.dirname(test_filename), exist_ok=True)
 
-    # Create temporary files for processing
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False
-    ) as ticket_file:
-        json.dump(ticket_data, ticket_file)
-        ticket_path = ticket_file.name
+                with open(test_filename, "w") as f:
+                    f.write(test_content)
 
-    try:
-        # Run POM agent to generate test compatible with existing framework
-        result = subprocess.run(  # nosec B607 B603 # Safe: controlled execution of internal script
-            [
-                "python",
-                "src/agent/agent_runner_pom.py",
-                "--ticket",
-                ticket_path,
-                "--kb",
-                "knowledge_base_schema.json",
-            ],
-            capture_output=True,
-            text=True,
-            cwd=os.getcwd(),
-        )
+                print(f"💾 Saved validated POM test to {test_filename}")
+                return True
 
-        if result.returncode == 0:
-            print(f"Generated POM test for ticket {ticket_data['id']}")
+            else:
+                print(f"❌ Test validation FAILED for ticket {ticket_id}")
+                print(f"📋 Validation error: {validation_result.stderr}")
+                print(f"📝 Validation output: {validation_result.stdout}")
 
-            # Extract test content
-            test_content = result.stdout.replace(
-                "# ===== Generated POM-based Playwright Test =====\n", ""
+                # Optionally save failed test for debugging
+                failed_test_filename = (
+                    f"failed_tests/"
+                    f"test_generated_"
+                    f"{ticket_id.lower().replace('-', '_')}_failed.py"
+                )
+                os.makedirs(os.path.dirname(failed_test_filename), exist_ok=True)
+                with open(failed_test_filename, "w") as f:
+                    f.write(test_content)
+                print(f"🗂️  Saved failed test for analysis: {failed_test_filename}")
+                return False
+
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_test_path):
+                os.unlink(temp_test_path)
+
+    def process_ticket(self, ticket: Dict[str, Any]) -> None:
+        """Process a single ticket through the agent pipeline with validation"""
+
+        # Extract relevant ticket information
+        ticket_data = {
+            "id": ticket.get("key", "unknown"),
+            "title": ticket.get("fields", {}).get("summary", "generated_test"),
+            "acceptance_criteria": [],
+        }
+
+        # Parse acceptance criteria from description or custom fields
+        description = ticket.get("fields", {}).get("description", "")
+        if description:
+            # Simple parsing - look for bullet points or numbered lists
+            lines = description.split("\n")
+            for line in lines:
+                line = line.strip()
+                if (
+                    line.startswith("-")
+                    or line.startswith("*")
+                    or line.startswith("1.")
+                ):
+                    # Simple heuristic for acceptance criteria
+                    ticket_data["acceptance_criteria"].append(
+                        {
+                            "action": "click",  # Default action
+                            "target": "unknown",
+                            "value": line.strip("-* 1234567890."),
+                        }
+                    )
+
+        # If no acceptance criteria found, create a basic test
+        if not ticket_data["acceptance_criteria"]:
+            ticket_data["acceptance_criteria"] = [
+                {"action": "goto", "target": "/"},
+                {"action": "assert_text", "value": "Welcome"},
+            ]
+
+        # Create temporary files for processing
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as ticket_file:
+            json.dump(ticket_data, ticket_file)
+            ticket_path = ticket_file.name
+
+        try:
+            # Run POM agent to generate test compatible with existing framework
+            result = subprocess.run(  # nosec B607 B603 # Safe: controlled execution of internal script
+                [
+                    "python",
+                    "src/agent/agent_runner_pom.py",
+                    "--ticket",
+                    ticket_path,
+                    "--kb",
+                    "knowledge_base_schema.json",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=os.getcwd(),
             )
 
-            # Validate and save the test
-            success = validate_and_save_test(test_content, ticket_data["id"])
+            if result.returncode == 0:
+                print(f"Generated POM test for ticket {ticket_data['id']}")
 
-            if success:
-                print(
-                    f"🎉 Successfully generated and validated test for ticket {ticket_data['id']}"
+                # Extract test content
+                test_content = result.stdout.replace(
+                    "# ===== Generated POM-based Playwright Test =====\n", ""
                 )
+
+                # Validate and save the test
+                success = self.validate_and_save_test(test_content, ticket_data["id"])
+
+                if success:
+                    print(
+                        f"🎉 Successfully generated and validated test for ticket {ticket_data['id']}"
+                    )
+                else:
+                    print(
+                        f"⚠️  Generated test for ticket {ticket_data['id']} but validation failed"
+                    )
+
             else:
                 print(
-                    f"⚠️  Generated test for ticket {ticket_data['id']} but validation failed"
+                    f"Error generating POM test for ticket "
+                    f"{ticket_data['id']}: {result.stderr}"
                 )
 
-        else:
-            print(
-                f"Error generating POM test for ticket "
-                f"{ticket_data['id']}: {result.stderr}"
-            )
+        finally:
+            # Clean up temporary file
+            os.unlink(ticket_path)
 
-    finally:
-        # Clean up temporary file
-        os.unlink(ticket_path)
+    def run(self) -> None:
+        """Run the continuous polling loop."""
+        while True:
+            try:
+                issues = self.fetch_tickets()
+                print(f"Fetched {len(issues)} issues")
+
+                for issue in issues:
+                    print(f"Processing ticket {issue.get('key', 'unknown')}")
+                    self.process_ticket(issue)
+
+            except Exception as e:
+                print(f"Error in main loop: {e}")
+
+            time.sleep(self.poll_interval)
 
 
 def main() -> None:
-    while True:
-        try:
-            issues = fetch_tickets()
-            print(f"Fetched {len(issues)} issues")
-
-            for issue in issues:
-                print(f"Processing ticket {issue.get('key', 'unknown')}")
-                process_ticket(issue)
-
-        except Exception as e:
-            print(f"Error in main loop: {e}")
-
-        time.sleep(POLL_INTERVAL)
+    """Main entry point for command-line usage."""
+    poller = JiraPollerWithValidation()
+    poller.run()
 
 
 if __name__ == "__main__":

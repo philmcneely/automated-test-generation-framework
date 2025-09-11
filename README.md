@@ -5,7 +5,7 @@ Contents:
 - src/poller/jira_poller.py (Jira poller)
 - src/agent/prompt.md (agent prompt)
 - src/agent/agent_runner.py (minimal agent runner)
-- src/tests/sample_test_playwright.py (Playwright+Pytest sample)
+- examples/sample_test_playwright.py (Playwright+Pytest sample)
 - src/indexer/github_indexer.py (shallow clone + index)
 - knowledge_base_schema.json (KB schema)
 - ci_cd_pipeline.yml (GitHub Actions tests)
