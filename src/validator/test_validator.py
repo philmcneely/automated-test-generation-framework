@@ -3,15 +3,15 @@
 ===============================================================================
 Test Validation Service for Automated Test Generation
 ===============================================================================
-This module validates generated Playwright tests by running them against the
-playwright-ai-framework submodule and providing feedback on failures.
+This module validates generated Playwright tests through static analysis and
+syntax validation without requiring execution in the target environment.
 
 Features:
-    ✓ Runs generated tests in isolated environment
-    ✓ Captures test results and failures
-    ✓ Provides detailed error analysis
-    ✓ Integrates with LLM for failure analysis (optional)
-    ✓ Updates knowledge base with learnings
+    ✓ Static syntax validation
+    ✓ Import validation
+    ✓ Test structure validation
+    ✓ Playwright pattern validation
+    ✓ No dependency on target environment
 
 Usage:
     python src/validator/test_validator.py --test path/to/generated_test.py
@@ -23,7 +23,7 @@ Date: 2025-09-11
 
 import argparse
 import os
-import subprocess  # nosec B404 # Safe usage: controlled execution of pytest commands
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
