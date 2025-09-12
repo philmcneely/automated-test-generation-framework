@@ -5,6 +5,7 @@ pytest
 pytest-playwright
 langchain
 openai
+anthropic
 requests
 pydantic
 pyyaml

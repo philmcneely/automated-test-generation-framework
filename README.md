@@ -3,8 +3,7 @@
 Contents:
 - automated_test_generation_spec.md (spec with code)
 - src/poller/jira_poller.py (Jira poller)
-- src/agent/prompt.md (agent prompt)
-- src/agent/agent_runner.py (minimal agent runner)
+- src/agent/unified_generator.py (unified test generator)
 - examples/sample_test_playwright.py (Playwright+Pytest sample)
 - src/indexer/github_indexer.py (shallow clone + index)
 - knowledge_base_schema.json (KB schema)

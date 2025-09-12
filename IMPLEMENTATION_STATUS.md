@@ -15,10 +15,20 @@ This repository implements an end-to-end automated test generation ecosystem tha
   - Automatically generates and validates Playwright tests
   - Error handling, logging, and test result validation
 
-### 2. Agent Runner (`src/agent/agent_runner_pom.py`)
-- **Status**: ✅ Fully implemented with class-based architecture
+### 2. Agent Runner (`src/agent/`)
+- **Status**: ✅ Fully implemented with unified class-based architecture
 - **Features**:
-  - POMTestGenerator class with Page Object Model support
+  - **TemplateTestGenerator** (`template_generator.py`): Template-based Page Object Model generation
+  - **LLMTestGenerator** (`llm_generator.py`): LLM-powered intelligent test generation
+  - **UnifiedTestGenerator** (`unified_generator.py`): Unified interface with multiple modes
+  - Support for multiple LLM providers: OpenAI, Anthropic Claude, Ollama, Azure
+  - Intelligent prompt engineering for test generation
+  - Framework adaptation (Playwright, Cypress, Selenium)
+  - Three generation modes: Template, LLM, and Hybrid (LLM with template fallback)
+  - Cost tracking and token usage monitoring
+  - Comprehensive error handling and fallback logic
+  - Knowledge base integration for context-aware generation
+  - Configurable model parameters (temperature, max_tokens, etc.)
   - Generates advanced Playwright+Pytest code from ticket JSON and knowledge base
   - Resolves selectors from knowledge base with intelligent mapping
   - Supports multiple actions: click, fill, goto, assert_text, wait_for_selector
@@ -72,14 +82,17 @@ This repository implements an end-to-end automated test generation ecosystem tha
   - Pytest configuration with custom markers
   - Playwright integration
   - Sample test files demonstrating usage
-  - 47+ unit and integration tests for all framework components
+  - 50+ unit and integration tests for all framework components including LLM functionality
   - Class-based architecture with proper mocking and dependency injection
+  - Comprehensive LLM testing with provider mocking
+  - Template and LLM generation validation
+  - Cost tracking and error handling tests
 
 ## 🧪 Testing Results
 
 ### Agent Test Generation
 ```bash
-python src/agent/agent_runner.py --ticket sample_ticket.json --kb knowledge_base_schema.json
+python src/agent/unified_generator.py --ticket sample_ticket.json --kb knowledge_base_schema.json
 ```
 
 **Output**: Successfully generates complete Playwright test:
@@ -134,7 +147,7 @@ export JIRA_JQL="project = ABC AND status in ('To Do', 'In Progress')"
 
 ### 2. Run Agent Directly (Class-based POM Generator)
 ```bash
-python src/agent/agent_runner_pom.py --ticket sample_ticket.json --kb knowledge_base_schema.json
+python src/agent/template_generator.py --ticket sample_ticket.json --kb knowledge_base_schema.json
 ```
 
 ### 3. Run Jira Poller (Class-based with Validation)
@@ -164,8 +177,9 @@ make index-github
 ```
 ├── src/
 │   ├── agent/
-│   │   ├── agent_runner_pom.py  # POM Test generation engine (class-based)
-│   │   └── prompt.md            # Agent guidelines
+│   │   ├── template_generator.py  # Template test generation engine (class-based)
+│   │   ├── llm_generator.py       # LLM-based test generation engine
+│   │   └── unified_generator.py   # Unified interface for all generators
 │   ├── indexer/
 │   │   └── github_indexer.py    # GitHub repository indexer (class-based)
 │   ├── poller/
@@ -178,7 +192,7 @@ make index-github
 ├── tests/
 │   ├── test_github_indexer.py   # Unit tests for GitHubIndexer
 │   ├── test_jira_poller_with_validation.py  # Unit tests for JiraPoller
-│   ├── test_agent_runner_pom.py # Unit tests for POMTestGenerator
+│   ├── test_template_generator.py # Unit tests for TemplateTestGenerator
 │   ├── test_validator.py        # Unit tests for ValidatorService
 │   └── generated/               # Temporary test storage
 ├── config/

@@ -71,7 +71,7 @@ Create a translation layer that converts generated Python tests to your target l
 - Maintain action mappings between frameworks
 
 ### Option 4: LLM Integration (Future)
-The framework includes a `prompt.md` file designed for future LLM integration that could:
+The framework includes sophisticated LLM integration capabilities that could:
 - Generate tests in any language/framework
 - Adapt to different coding patterns
 - Handle more complex scenarios

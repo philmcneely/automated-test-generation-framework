@@ -1,0 +1,33 @@
+{
+  "id": "ABC-123",
+  "title": "User login with valid credentials",
+  "description": "As a user, I want to log into the application with my valid credentials so that I can access my dashboard",
+  "acceptance_criteria": [
+    {
+      "action": "goto",
+      "target": "https://the-internet.herokuapp.com/login"
+    },
+    {
+      "action": "fill",
+      "target": "username_field",
+      "value": "tomsmith"
+    },
+    {
+      "action": "fill",
+      "target": "password_field",
+      "value": "SuperSecretPassword!"
+    },
+    {
+      "action": "click",
+      "target": "login_button"
+    },
+    {
+      "action": "assert_text",
+      "value": "Secure Area"
+    },
+    {
+      "action": "assert_text",
+      "value": "You logged into a secure area!"
+    }
+  ]
+}

@@ -12,9 +12,9 @@ Each file will get a customized header that:
 ## Files to Update
 
 ### Core Agent Files
-- [ ] src/agent/agent_runner.py - Test generation from tickets
-- [ ] src/agent/agent_runner_pom.py - POM-based test generation
-- [ ] src/agent/prompt.md - AI prompting guidelines
+- [x] src/agent/unified_generator.py - Unified test generation interface
+- [x] src/agent/template_generator.py - Template-based test generation
+- [x] src/agent/llm_generator.py - LLM-based test generation
 
 ### Poller Files
 - [ ] src/poller/jira_poller.py - Jira ticket polling
@@ -31,7 +31,9 @@ Each file will get a customized header that:
 - [ ] examples/sample_test_playwright.py - Sample test template
 
 ### Main Test Files
-- [ ] tests/test_agent_runner.py - Unit tests for agent runner
+- [ ] tests/test_unified_generator.py - Unit tests for unified generator
+- [ ] tests/test_template_generator.py - Unit tests for template generator
+- [ ] tests/test_llm_generator.py - Unit tests for LLM generator
 - [ ] tests/test_validator.py - Unit tests for validator
 
 ## Test Coverage Goals

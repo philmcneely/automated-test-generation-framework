@@ -11,7 +11,7 @@ using the Page Object Model pattern.
 from .__version__ import __version__, __version_info__
 
 # Core components
-from .agent.agent_runner_pom import POMTestGenerator
+from .agent.template_generator import TemplateTestGenerator
 from .indexer.github_indexer import GitHubIndexer
 from .integrations.jira_reporter import JiraReporter, JiraTestResult
 from .poller.jira_poller_with_validation import JiraPollerWithValidation

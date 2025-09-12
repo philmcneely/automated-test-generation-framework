@@ -1,8 +1,33 @@
 """
-Comprehensive tests for the refactored POMTestGenerator class.
+Tests for Template-Based Test Generator
 
-This test suite validates the class-based implementation maintains all functionality
-from the original functional approach while adding better testability and encapsulation.
+This module contains comprehensive unit tests for the TemplateTestGenerator class,
+which provides template-based test generation using Page Object Model patterns.
+
+Test Coverage:
+    ✓ Generator initialization and configuration
+    ✓ JSON file loading and validation
+    ✓ Text processing and snake_case conversion
+    ✓ Selector resolution from knowledge base
+    ✓ Test step generation for various actions
+    ✓ Complete test code generation
+    ✓ File I/O operations and error handling
+    ✓ Edge cases and error conditions
+
+Test Structure:
+    - TestTemplateTestGeneratorInitialization: Basic setup and configuration
+    - TestTestGeneration: Core test generation functionality
+    - TestFileOperations: File loading and saving operations
+    - TestEdgeCases: Error handling and edge cases
+
+Dependencies:
+    - unittest.mock: Mocking for isolated unit tests
+    - tempfile: Temporary file operations for testing
+    - pathlib: File path operations
+    - json: JSON data handling for test fixtures
+
+Author: PMAC
+Date: 2025-09-11
 """
 
 import json
@@ -12,11 +37,11 @@ from typing import Any
 
 import pytest
 
-from src.agent.agent_runner_pom import POMTestGenerator
+from src.agent.template_generator import TemplateTestGenerator
 
 
-class TestPOMTestGeneratorInitialization:
-    """Test POMTestGenerator class static methods and utilities."""
+class TestTemplateTestGeneratorInitialization:
+    """Test TemplateTestGenerator class static methods and utilities."""
 
     def test_load_json_success(self) -> None:
         """Test successful JSON loading."""
@@ -29,14 +54,15 @@ class TestPOMTestGeneratorInitialization:
             temp_path = temp_file.name
 
         try:
-            result = POMTestGenerator.load_json(temp_path)
+            generator = TemplateTestGenerator()
+            result = generator.load_json(temp_path)
             assert result == test_data
         finally:
             Path(temp_path).unlink()
 
     def test_to_snake_case_conversion(self) -> None:
         """Test snake_case conversion from different formats."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         assert generator.to_snake_case("CamelCase") == "camel_case"
         assert generator.to_snake_case("camelCase") == "camel_case"
@@ -50,7 +76,7 @@ class TestTestGeneration:
 
     def test_generate_simple_test(self) -> None:
         """Test generation of a simple test with basic actions."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Test login functionality",
@@ -74,7 +100,7 @@ class TestTestGeneration:
             ]
         }
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify test structure
         assert "async def test_test_login_functionality" in result
@@ -87,7 +113,7 @@ class TestTestGeneration:
 
     def test_generate_test_with_raw_selectors(self) -> None:
         """Test generation with raw CSS selectors not in knowledge base."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Test with raw selectors",
@@ -99,7 +125,7 @@ class TestTestGeneration:
 
         kb: Any = {"page_objects": []}
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify raw selectors are used directly
         assert "await page.click('#submit-btn')" in result
@@ -107,7 +133,7 @@ class TestTestGeneration:
 
     def test_generate_test_with_page_navigation(self) -> None:
         """Test that page navigation is handled correctly."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Multi-page test",
@@ -132,7 +158,7 @@ class TestTestGeneration:
             ]
         }
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify page navigation is included
         assert "await app.login_page.navigate()" in result
@@ -140,7 +166,7 @@ class TestTestGeneration:
 
     def test_generate_test_with_special_mappings(self) -> None:
         """Test special method name mappings for common elements."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Special mappings test",
@@ -162,7 +188,7 @@ class TestTestGeneration:
             ]
         }
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify special method mappings
         assert "await app.login_page.enter_username('admin')" in result
@@ -170,7 +196,7 @@ class TestTestGeneration:
 
     def test_generate_test_with_unsupported_action(self) -> None:
         """Test handling of unsupported actions."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Unsupported action test",
@@ -181,14 +207,14 @@ class TestTestGeneration:
 
         kb: Any = {"page_objects": []}
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify unsupported action is handled with TODO comment
         assert "# TODO: Unsupported step:" in result
 
     def test_generate_test_function_name_sanitization(self) -> None:
         """Test that test function names are properly sanitized."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Test with Special Characters! & Symbols @#$%",
@@ -197,20 +223,20 @@ class TestTestGeneration:
 
         kb: Any = {"page_objects": []}
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify function name is sanitized (check for part of the name)
         assert "async def test_test_with_special_characters" in result
 
     def test_generate_test_with_empty_criteria(self) -> None:
         """Test generation with empty acceptance criteria."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {"title": "Empty test", "acceptance_criteria": []}
 
         kb: Any = {"page_objects": []}
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify basic test structure is still generated
         assert "async def test_empty_test" in result
@@ -223,7 +249,7 @@ class TestFileOperations:
 
     def test_generate_from_files_success(self) -> None:
         """Test successful generation from files."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket_data = {
             "title": "File test",
@@ -249,7 +275,7 @@ class TestFileOperations:
 
     def test_generate_from_files_with_output(self) -> None:
         """Test generation with output file."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket_data = {
             "title": "Output test",
@@ -285,19 +311,19 @@ class TestEdgeCases:
 
     def test_missing_ticket_fields(self) -> None:
         """Test handling of missing ticket fields."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket: Any = {}  # Empty ticket
         kb: Any = {"page_objects": []}
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Verify default values are used
         assert "async def test_generated_test" in result
 
     def test_missing_kb_fields(self) -> None:
         """Test handling of missing knowledge base fields."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Test with missing KB",
@@ -306,14 +332,14 @@ class TestEdgeCases:
 
         kb: Any = {}  # Empty KB
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Should not crash and should generate valid test
         assert "async def test_test_with_missing_kb" in result
 
     def test_malformed_selectors(self) -> None:
         """Test handling of malformed selectors in knowledge base."""
-        generator = POMTestGenerator()
+        generator = TemplateTestGenerator()
 
         ticket = {
             "title": "Malformed selector test",
@@ -331,7 +357,7 @@ class TestEdgeCases:
             ]
         }
 
-        result = generator.generate_pom_playwright_test(ticket, kb)
+        result = generator.generate_test(ticket, kb)
 
         # Should handle gracefully without crashing
         assert "async def test_malformed_selector_test" in result

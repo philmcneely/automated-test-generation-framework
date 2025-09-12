@@ -80,6 +80,27 @@ git checkout HEAD -- playwright-ai-framework
 - Be specific about what changed and why
 - Reference issues/tickets when applicable
 
+**RULE #11: Refactoring Standards**
+- When refactoring modules, update ALL related files simultaneously:
+  - Source code files
+  - Test files
+  - Documentation (README, IMPLEMENTATION_STATUS, etc.)
+  - Import statements in other modules
+  - CI/CD pipeline references
+- Never leave broken imports or outdated references
+- Test the entire pipeline after refactoring changes
+
+**RULE #12: File Headers Required**
+- ALL Python files (src/, tests/) must have standardized headers
+- Header format must include:
+  - Module purpose and description
+  - Key features/functionality
+  - Usage examples (where applicable)
+  - Dependencies
+  - Author, Date, Version
+- Keep headers consistent across the project
+- Update headers when refactoring or making significant changes
+
 ## 🔍 Enforcement
 
 These rules are enforced by:

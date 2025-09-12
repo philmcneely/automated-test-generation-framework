@@ -96,7 +96,7 @@ python src/validator/test_validator.py --test playwright-ai-framework/tests/gene
 python src/poller/jira_poller_with_validation.py
 
 # Generate a new test
-python src/agent/agent_runner_pom.py --ticket sample_ticket.json --kb knowledge_base_existing_framework.json --output test_new.py
+python src/agent/template_generator.py --ticket sample_ticket.json --kb knowledge_base_existing_framework.json --output test_new.py
 
 # Validate the new test
 python src/validator/test_validator.py --test test_new.py

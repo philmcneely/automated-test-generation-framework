@@ -221,7 +221,7 @@ class JiraPollerWithValidation:
             result = subprocess.run(  # nosec B607 B603 # Safe: controlled execution of internal script
                 [
                     "python",
-                    "src/agent/agent_runner_pom.py",
+                    "src/agent/template_generator.py",
                     "--ticket",
                     ticket_path,
                     "--kb",

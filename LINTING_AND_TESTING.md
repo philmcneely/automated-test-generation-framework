@@ -126,7 +126,9 @@ Defines pre-commit hooks that run automatically before commits:
 ```
 tests/
 ├── __init__.py
-├── test_agent_runner.py      # Unit tests for agent runner
+├── test_unified_generator.py  # Unit tests for unified generator
+├── test_template_generator.py # Unit tests for template generator
+├── test_llm_generator.py      # Unit tests for LLM generator
 ├── test_validator.py         # Unit tests for validator
 └── integration/              # Integration tests (if needed)
     └── test_workflows.py
@@ -144,7 +146,7 @@ pytest -m unit
 pytest --cov=src --cov-report=html
 
 # Run specific test file
-pytest tests/test_agent_runner.py
+pytest tests/test_unified_generator.py
 
 # Run with verbose output
 pytest -v
