@@ -228,10 +228,22 @@ class TemplateTestGenerator:
                 if element == target:
                     # Found a match, generate POM call
                     if action == "click":
-                        method_name = f"click_{element.replace('_button', '').replace('_link', '').replace('_field', '')}"
+                        # Handle different element types for click actions
+                        if "_button" in element:
+                            method_name = f"click_{element.replace('_button', '')}"
+                        elif "_link" in element:
+                            method_name = f"click_{element.replace('_link', '')}"
+                        else:
+                            method_name = f"click_{element}"
                         return f"await app.{page_name}.{method_name}()"
                     elif action == "fill":
-                        method_name = f"enter_{element.replace('_field', '').replace('_input', '')}"
+                        # Handle different element types for fill actions
+                        if "_field" in element:
+                            method_name = f"enter_{element.replace('_field', '')}"
+                        elif "_input" in element:
+                            method_name = f"enter_{element.replace('_input', '')}"
+                        else:
+                            method_name = f"enter_{element}"
                         return f"await app.{page_name}.{method_name}('{value}')"
                     elif action == "navigate" and page_name:
                         return f"await app.{page_name}.navigate()"
