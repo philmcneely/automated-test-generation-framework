@@ -473,6 +473,9 @@ class TestCommandLineInterface:
         args.provider = None
         args.framework = None
         args.stats = False
+        args.show_env_example = False
+        args.show_config = False
+        args.show_env_example = False
         mock_parse_args.return_value = args
 
         mock_generator = Mock()
@@ -510,6 +513,8 @@ class TestCommandLineInterface:
         args.provider = None
         args.framework = None
         args.stats = True
+        args.show_env_example = False
+        args.show_config = False
         mock_parse_args.return_value = args
 
         with patch(
@@ -521,6 +526,16 @@ class TestCommandLineInterface:
                 "llm_used": 3,
                 "template_used": 2,
             }
+            mock_result = GenerationResult(
+                test_code="test_code",
+                success=True,
+                provider_used="template",
+                model_used="v1.0",
+                generation_time=1.0,
+                tokens_used=0,
+                cost_usd=0.0,
+            )
+            mock_generator.generate_from_files.return_value = mock_result
             mock_gen_class.return_value = mock_generator
 
             with patch("builtins.print") as mock_print:

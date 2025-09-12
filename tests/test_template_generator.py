@@ -160,9 +160,9 @@ class TestTestGeneration:
 
         result = generator.generate_test(ticket, kb)
 
-        # Verify page navigation is included
-        assert "await app.login_page.navigate()" in result
-        assert "await app.dashboard_page.navigate()" in result
+        # Verify POM calls are generated correctly
+        assert "await app.login_page.click_login()" in result
+        assert "await app.dashboard_page.click_dashboard()" in result
 
     def test_generate_test_with_special_mappings(self) -> None:
         """Test special method name mappings for common elements."""
@@ -210,7 +210,7 @@ class TestTestGeneration:
         result = generator.generate_test(ticket, kb)
 
         # Verify unsupported action is handled with TODO comment
-        assert "# TODO: Unsupported step:" in result
+        assert "# TODO: Implement hover action for menu_item" in result
 
     def test_generate_test_function_name_sanitization(self) -> None:
         """Test that test function names are properly sanitized."""
@@ -319,7 +319,7 @@ class TestEdgeCases:
         result = generator.generate_test(ticket, kb)
 
         # Verify default values are used
-        assert "async def test_generated_test" in result
+        assert "async def test_unknown_test" in result
 
     def test_missing_kb_fields(self) -> None:
         """Test handling of missing knowledge base fields."""

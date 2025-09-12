@@ -154,7 +154,7 @@ class TemplateTestGenerator:
         return mapping
 
     def generate_test_step(
-        self, step: Dict[str, Any], selector_mapping: Dict[str, str]
+        self, step: Dict[str, Any], selector_mapping: Dict[str, str], kb: Dict[str, Any]
     ) -> str:
         """Generate a single test step from acceptance criteria."""
         action = step.get("action", "").lower()
@@ -165,7 +165,12 @@ class TemplateTestGenerator:
             logger.warning(f"Unsupported action: {action}")
             return f"    # TODO: Implement {action} action for {target}"
 
-        # Resolve selector
+        # Try to find POM mapping for this target
+        pom_call = self._generate_pom_call(action, target, value, kb)
+        if pom_call:
+            return f"    {pom_call}"
+
+        # Fallback to direct Playwright calls
         selector = self.resolve_selector(
             target,
             {
@@ -199,12 +204,54 @@ class TemplateTestGenerator:
             return f"    await expect(page.locator('{selector}')).to_be_visible()"
         elif action == "assert_not_visible":
             return f"    await expect(page.locator('{selector}')).not_to_be_visible()"
-        elif action == "assert_enabled":
-            return f"    await expect(page.locator('{selector}')).to_be_enabled()"
-        elif action == "assert_disabled":
-            return f"    await expect(page.locator('{selector}')).to_be_disabled()"
         else:
-            return f"    # TODO: Implement {action} for {target}"
+            return f"    # TODO: Unsupported step: {action} {target}"
+
+    def _generate_pom_call(
+        self, action: str, target: str, value: str, kb: Dict[str, Any]
+    ) -> Optional[str]:
+        """Generate POM-style call if target maps to a page object method."""
+        page_objects = kb.get("page_objects", [])
+
+        for page_obj in page_objects:
+            # Check both 'page_name' and 'name' fields for compatibility
+            page_name = page_obj.get("page_name") or page_obj.get("name", "")
+            if page_name:
+                # Convert page name to snake_case for app attribute
+                page_name = self.to_snake_case(page_name)
+
+            selectors = page_obj.get("selectors", [])
+
+            # Check if target matches any selector in this page object
+            for selector_info in selectors:
+                element = selector_info.get("element", "")
+                if element == target:
+                    # Found a match, generate POM call
+                    if action == "click":
+                        method_name = f"click_{element.replace('_button', '').replace('_link', '').replace('_field', '')}"
+                        return f"await app.{page_name}.{method_name}()"
+                    elif action == "fill":
+                        method_name = f"enter_{element.replace('_field', '').replace('_input', '')}"
+                        return f"await app.{page_name}.{method_name}('{value}')"
+                    elif action == "navigate" and page_name:
+                        return f"await app.{page_name}.navigate()"
+
+        return None
+
+    def _find_page_for_target(self, target: str, kb: Dict[str, Any]) -> Optional[str]:
+        """Find which page object contains the given target element."""
+        page_objects = kb.get("page_objects", [])
+
+        for page_obj in page_objects:
+            selectors = page_obj.get("selectors", [])
+            for selector_info in selectors:
+                element = selector_info.get("element", "")
+                if element == target:
+                    # Return the page name
+                    page_name = page_obj.get("page_name") or page_obj.get("name", "")
+                    return str(page_name) if page_name else None
+
+        return None
 
     def generate_test(self, ticket: Dict[str, Any], kb: Dict[str, Any]) -> str:
         """
@@ -230,16 +277,37 @@ class TemplateTestGenerator:
 
         # Generate test steps
         test_steps = []
+        current_page = None  # Track which page we're currently on
+
         for criterion in acceptance_criteria:
             if isinstance(criterion, dict) and "steps" in criterion:
                 # Handle structured acceptance criteria
                 steps = criterion.get("steps", [])
                 for step in steps:
-                    test_step = self.generate_test_step(step, selector_mapping)
+                    # Check if we need to navigate to a different page
+                    target = step.get("target", "")
+                    page_for_target = self._find_page_for_target(target, kb)
+
+                    if page_for_target and page_for_target != current_page:
+                        # Need to navigate to this page first
+                        page_name = self.to_snake_case(page_for_target)
+                        test_steps.append(f"    await app.{page_name}.navigate()")
+                        current_page = page_for_target
+
+                    test_step = self.generate_test_step(step, selector_mapping, kb)
                     test_steps.append(test_step)
             elif isinstance(criterion, dict):
                 # Handle single step criterion
-                test_step = self.generate_test_step(criterion, selector_mapping)
+                target = criterion.get("target", "")
+                page_for_target = self._find_page_for_target(target, kb)
+
+                if page_for_target and page_for_target != current_page:
+                    # Need to navigate to this page first
+                    page_name = self.to_snake_case(page_for_target)
+                    test_steps.append(f"    await app.{page_name}.navigate()")
+                    current_page = page_for_target
+
+                test_step = self.generate_test_step(criterion, selector_mapping, kb)
                 test_steps.append(test_step)
             else:
                 # Handle string-based criteria (convert to comment)

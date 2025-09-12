@@ -229,7 +229,7 @@ class TestTicketProcessing:
             # Verify test generation was called
             mock_subprocess.assert_called_once()
             call_args = mock_subprocess.call_args[0][0]
-            assert "src/agent/agent_runner_pom.py" in call_args
+            assert "src/agent/template_generator.py" in call_args
 
             # Verify cleanup was called
             mock_unlink.assert_called_once_with("/tmp/test_ticket.json")
