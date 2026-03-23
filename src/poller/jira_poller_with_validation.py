@@ -39,6 +39,8 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+from src.poller.llm_parser import build_parser_prompt, parse_llm_response
+
 
 class JiraPollerWithValidation:
     """
@@ -171,6 +173,53 @@ class JiraPollerWithValidation:
             if os.path.exists(temp_test_path):
                 os.unlink(temp_test_path)
 
+    def parse_with_llm(self, ticket: Dict[str, Any]) -> Optional["TestRequirement"]:
+        """Parse a Jira ticket into structured test requirements using LLM.
+
+        Builds a parser prompt from the ticket fields, invokes the LLM generator,
+        and validates the response with Pydantic.
+
+        Args:
+            ticket: Raw Jira ticket dict from the API.
+
+        Returns:
+            Validated TestRequirement or None if parsing fails.
+        """
+        ticket_id = ticket.get("key", "unknown")
+        fields = ticket.get("fields", {})
+        title = fields.get("summary", "")
+        description = fields.get("description", "")
+
+        if not description:
+            return None
+
+        prompt = build_parser_prompt(ticket_id, title, description)
+
+        try:
+            # Call the existing LLM generator to get a response
+            result = subprocess.run(  # nosec B603 # Safe: controlled execution of internal script
+                [
+                    sys.executable,
+                    "src/agent/llm_generator.py",
+                    "--prompt",
+                    prompt,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=os.getcwd(),
+                timeout=120,
+            )
+
+            if result.returncode == 0 and result.stdout.strip():
+                return parse_llm_response(result.stdout, ticket_id, title, description)
+            else:
+                print(f"LLM generator failed for {ticket_id}: {result.stderr}")
+                return None
+
+        except (subprocess.TimeoutExpired, Exception) as e:
+            print(f"LLM parsing failed for {ticket_id}: {e}")
+            return None
+
     def process_ticket(self, ticket: Dict[str, Any]) -> None:
         """Process a single ticket through the agent pipeline with validation"""
 
@@ -181,33 +230,43 @@ class JiraPollerWithValidation:
             "acceptance_criteria": [],
         }
 
-        # Parse acceptance criteria from description or custom fields
-        description = ticket.get("fields", {}).get("description", "")
-        if description:
-            # Simple parsing - look for bullet points or numbered lists
-            lines = description.split("\n")
-            for line in lines:
-                line = line.strip()
-                if (
-                    line.startswith("-")
-                    or line.startswith("*")
-                    or line.startswith("1.")
-                ):
-                    # Simple heuristic for acceptance criteria
-                    ticket_data["acceptance_criteria"].append(
-                        {
-                            "action": "click",  # Default action
-                            "target": "unknown",
-                            "value": line.strip("-* 1234567890."),
-                        }
-                    )
-
-        # If no acceptance criteria found, create a basic test
-        if not ticket_data["acceptance_criteria"]:
+        # Try LLM-based structured parsing first
+        requirement = self.parse_with_llm(ticket)
+        if requirement and not requirement.needs_human_review:
             ticket_data["acceptance_criteria"] = [
-                {"action": "goto", "target": "/"},
-                {"action": "assert_text", "value": "Welcome"},
+                {"action": step.action, "target": step.target, "value": step.value or ""}
+                for scenario in requirement.scenarios
+                for step in scenario.steps
             ]
+            ticket_data["test_requirement"] = requirement.model_dump()
+        else:
+            # Fallback to naive parsing
+            description = ticket.get("fields", {}).get("description", "")
+            if description:
+                # Simple parsing - look for bullet points or numbered lists
+                lines = description.split("\n")
+                for line in lines:
+                    line = line.strip()
+                    if (
+                        line.startswith("-")
+                        or line.startswith("*")
+                        or line.startswith("1.")
+                    ):
+                        # Simple heuristic for acceptance criteria
+                        ticket_data["acceptance_criteria"].append(
+                            {
+                                "action": "click",  # Default action
+                                "target": "unknown",
+                                "value": line.strip("-* 1234567890."),
+                            }
+                        )
+
+            # If no acceptance criteria found, create a basic test
+            if not ticket_data["acceptance_criteria"]:
+                ticket_data["acceptance_criteria"] = [
+                    {"action": "goto", "target": "/"},
+                    {"action": "assert_text", "value": "Welcome"},
+                ]
 
         # Create temporary files for processing
         with tempfile.NamedTemporaryFile(
