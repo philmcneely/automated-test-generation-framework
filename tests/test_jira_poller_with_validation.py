@@ -292,41 +292,69 @@ class TestLLMParsing:
 
     def test_parse_with_llm_skips_ticket_without_description(self) -> None:
         """No description means no LLM call and no requirement."""
-        with patch("subprocess.run") as mock_run:
+        poller = self._poller()
+        client = MagicMock()
+        with patch.object(poller, "_get_llm_client", return_value=client):
             ticket = {"key": "TEST-1", "fields": {"summary": "x", "description": ""}}
-            assert self._poller().parse_with_llm(ticket) is None
-            mock_run.assert_not_called()
+            assert poller.parse_with_llm(ticket) is None
+        client.complete.assert_not_called()
 
-    @patch("subprocess.run")
-    def test_parse_with_llm_returns_none_on_generator_failure(
-        self, mock_run: Any
-    ) -> None:
-        """A failing LLM generator yields None so the caller can fall back."""
-        mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="boom")
+    def test_parse_with_llm_returns_none_on_client_error(self) -> None:
+        """A client error yields None so the caller can fall back."""
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.side_effect = RuntimeError("boom")
         ticket = {
             "key": "TEST-1",
             "fields": {"summary": "x", "description": "- do a thing"},
         }
-        assert self._poller().parse_with_llm(ticket) is None
-        mock_run.assert_called_once()
+        with patch.object(poller, "_get_llm_client", return_value=client):
+            assert poller.parse_with_llm(ticket) is None
+        client.complete.assert_called_once()
+
+    def test_parse_with_llm_returns_none_on_empty_response(self) -> None:
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "  "
+        ticket = {"key": "T-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "_get_llm_client", return_value=client):
+            assert poller.parse_with_llm(ticket) is None
+
+    def test_parse_with_llm_parses_returned_text(self) -> None:
+        """Raw completion text is handed to parse_llm_response."""
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "raw model text"
+        sentinel = object()
+        ticket = {"key": "T-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "_get_llm_client", return_value=client), patch(
+            "src.poller.jira_poller_with_validation.parse_llm_response",
+            return_value=sentinel,
+        ) as parse:
+            assert poller.parse_with_llm(ticket) is sentinel
+        parse.assert_called_once_with("raw model text", "T-1", "x", "d")
 
     @patch("subprocess.run")
     def test_process_ticket_runs_llm_parse_then_template_generator(
         self, mock_run: Any
     ) -> None:
-        """With a description, the LLM parse call precedes template generation."""
-        mock_run.return_value = MagicMock(returncode=0, stdout="no json here", stderr="")
+        """With a description, the LLM client is called, then the template generator runs."""
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
         poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "no json here"
         ticket = {
             "key": "TEST-1",
             "fields": {"summary": "x", "description": "- Click login"},
         }
-        with patch.object(poller, "validate_and_save_test", return_value=True):
+        with patch.object(poller, "_get_llm_client", return_value=client), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
             poller.process_ticket(ticket)
 
-        assert mock_run.call_count == 2
-        assert "src/agent/llm_generator.py" in mock_run.call_args_list[0][0][0]
-        assert "src/agent/template_generator.py" in mock_run.call_args_list[1][0][0]
+        client.complete.assert_called_once()
+        assert mock_run.call_count == 1
+        assert "src/agent/template_generator.py" in mock_run.call_args_list[0][0][0]
 
 
     def test_process_ticket_passes_scenarios_with_translated_actions(self) -> None:

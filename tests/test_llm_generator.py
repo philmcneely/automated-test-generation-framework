@@ -418,3 +418,17 @@ class TestGenerationResult:
         assert result.test_code == ""
         assert result.success is False
         assert result.error_message == "Rate limit exceeded"
+
+
+class TestComplete:
+    def test_complete_returns_raw_text_from_provider(self) -> None:
+        from unittest.mock import patch
+
+        from src.agent.config import LLMProvider
+        from src.agent.llm_generator import LLMConfig, LLMTestGenerator
+
+        gen = LLMTestGenerator(LLMConfig(provider=LLMProvider.OLLAMA, model="m"))
+        with patch.object(gen, "_call_ollama", return_value=("raw", 5, 0.25)) as call:
+            assert gen.complete("hello") == "raw"
+        call.assert_called_once_with("hello")
+        assert gen.total_cost == 0.25

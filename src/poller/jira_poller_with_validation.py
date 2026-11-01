@@ -45,6 +45,8 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+from src.agent.config import LLMProvider
+from src.agent.llm_generator import LLMConfig, LLMTestGenerator
 from src.poller.llm_parser import build_parser_prompt, parse_llm_response
 
 
@@ -85,6 +87,7 @@ class JiraPollerWithValidation:
             "JIRA_JQL", 'project = ABC AND status in ("To Do", "In Progress")'
         )
         self.poll_interval = poll_interval
+        self._llm_client: Optional[LLMTestGenerator] = None
 
         if not all([self.jira_base, self.jira_user, self.jira_token]):
             raise ValueError(
@@ -183,10 +186,29 @@ class JiraPollerWithValidation:
             if os.path.exists(temp_test_path):
                 os.unlink(temp_test_path)
 
+    def _get_llm_client(self) -> LLMTestGenerator:
+        """Build (once) the in-process LLM client from LLM_* environment."""
+        if self._llm_client is None:
+            provider = LLMProvider(os.getenv("LLM_PROVIDER", "openai"))
+            defaults = {
+                LLMProvider.OPENAI: "gpt-4-turbo-preview",
+                LLMProvider.CLAUDE: "claude-3-5-sonnet-20241022",
+                LLMProvider.OLLAMA: "llama3.1:8b",
+                LLMProvider.AZURE: "gpt-4",
+            }
+            config = LLMConfig(
+                provider=provider,
+                model=os.getenv("LLM_MODEL", defaults[provider]),
+                base_url=os.getenv("LLM_BASE_URL"),
+                timeout=120,
+            )
+            self._llm_client = LLMTestGenerator(config)
+        return self._llm_client
+
     def parse_with_llm(self, ticket: Dict[str, Any]) -> Optional["TestRequirement"]:
         """Parse a Jira ticket into structured test requirements using LLM.
 
-        Builds a parser prompt from the ticket fields, invokes the LLM generator,
+        Builds a parser prompt from the ticket fields, calls the in-process LLM client,
         and validates the response with Pydantic.
 
         Args:
@@ -206,27 +228,12 @@ class JiraPollerWithValidation:
         prompt = build_parser_prompt(ticket_id, title, description)
 
         try:
-            # Call the existing LLM generator to get a response
-            result = subprocess.run(  # nosec B603 # Safe: controlled execution of internal script
-                [
-                    sys.executable,
-                    "src/agent/llm_generator.py",
-                    "--prompt",
-                    prompt,
-                ],
-                capture_output=True,
-                text=True,
-                cwd=os.getcwd(),
-                timeout=120,
-            )
-
-            if result.returncode == 0 and result.stdout.strip():
-                return parse_llm_response(result.stdout, ticket_id, title, description)
-            else:
-                print(f"LLM generator failed for {ticket_id}: {result.stderr}")
+            raw = self._get_llm_client().complete(prompt)
+            if not raw or not raw.strip():
+                print(f"LLM returned an empty response for {ticket_id}")
                 return None
-
-        except (subprocess.TimeoutExpired, Exception) as e:
+            return parse_llm_response(raw, ticket_id, title, description)
+        except Exception as e:
             print(f"LLM parsing failed for {ticket_id}: {e}")
             return None
 

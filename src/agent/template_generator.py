@@ -49,7 +49,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -319,7 +319,7 @@ class TemplateTestGenerator:
 @pytest.mark.generated
 async def {function_name}(page, app):
     """
-    Test case: {title}
+    Test case: {self._doc_text(self._comment_text(title))}
 
     Generated from ticket acceptance criteria.
     """
@@ -334,8 +334,17 @@ async def {function_name}(page, app):
         kb: Dict[str, Any],
     ) -> list:
         """Turn acceptance criteria into generated step lines."""
+        return self._build_steps_tracked(criteria, selector_mapping, kb, None)[0]
+
+    def _build_steps_tracked(
+        self,
+        criteria: list,
+        selector_mapping: Dict[str, str],
+        kb: Dict[str, Any],
+        current_page: Optional[str],
+    ) -> Tuple[list, Optional[str]]:
+        """Build step lines, carrying the current page across calls."""
         test_steps = []
-        current_page = None  # Track which page we're currently on
 
         for criterion in criteria:
             if isinstance(criterion, dict) and "steps" in criterion:
@@ -370,7 +379,12 @@ async def {function_name}(page, app):
             else:
                 # Handle string-based criteria (convert to comment)
                 test_steps.append(f"    # {criterion}")
-        return test_steps
+        return test_steps, current_page
+
+    @staticmethod
+    def _doc_text(text: Any) -> str:
+        """Escape text so it cannot terminate or alter a triple-quoted docstring."""
+        return str(text).replace("\\", "\\\\").replace('"', '\\"')
 
     @staticmethod
     def _comment_text(text: Any) -> str:
@@ -387,10 +401,13 @@ async def {function_name}(page, app):
     ) -> str:
         """Render one independent test function for a single scenario."""
         lines = []
+        current_page: Optional[str] = None  # navigation state spans the scenario
         for pre in scenario.get("preconditions", []):
             lines.append(f"    # Precondition: {self._comment_text(pre)}")
         for step in scenario.get("steps", []):
-            rendered = self._build_steps([step], selector_mapping, kb)
+            rendered, current_page = self._build_steps_tracked(
+                [step], selector_mapping, kb, current_page
+            )
             lines.extend(rendered)
             if step.get("assertion"):
                 lines.append(f"    # Expected: {self._comment_text(step['assertion'])}")
@@ -405,9 +422,9 @@ async def {function_name}(page, app):
 @pytest.mark.generated
 async def {function_name}(page, app):
     """
-    Test case: {self._comment_text(title)} - {scenario_name}
+    Test case: {self._doc_text(self._comment_text(title))} - {self._doc_text(scenario_name)}
 
-    Generated from ticket scenario ({scenario.get("type", "happy_path")}).
+    Generated from ticket scenario ({self._doc_text(self._comment_text(scenario.get("type", "happy_path")))}).
     """
 {chr(10).join(lines)}
 '''
@@ -415,9 +432,9 @@ async def {function_name}(page, app):
     def _render_module(self, title: str, description: str, body: str) -> str:
         """Wrap generated test function(s) in the module header."""
         return f'''"""
-Generated test for: {title}
+Generated test for: {self._doc_text(self._comment_text(title))}
 
-Description: {description}
+Description: {self._doc_text(description)}
 
 This test was automatically generated from Jira ticket acceptance criteria
 using the template-based test generator.
