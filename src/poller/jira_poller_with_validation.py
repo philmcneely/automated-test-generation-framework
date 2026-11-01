@@ -39,6 +39,26 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+# Support direct-script launch (python src/poller/jira_poller_with_validation.py),
+# where only src/poller is on sys.path and the repository root is not.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
+from src.agent.config import AgentConfig, LLMProvider
+from src.agent.llm_generator import LLMConfig, LLMTestGenerator
+from src.poller.llm_parser import build_parser_prompt, parse_llm_response
+
+
+# Parser vocabulary -> TemplateTestGenerator vocabulary.
+DEFAULT_MODELS = {
+    LLMProvider.OPENAI: "gpt-4-turbo-preview",
+    LLMProvider.CLAUDE: "claude-3-5-sonnet-20241022",
+    LLMProvider.OLLAMA: "llama3.1:8b",
+    LLMProvider.AZURE: "gpt-4",
+}
+LLM_ACTION_MAP = {"navigate": "goto", "wait": "wait_for_selector"}
+
 
 class JiraPollerWithValidation:
     """
@@ -73,6 +93,7 @@ class JiraPollerWithValidation:
             "JIRA_JQL", 'project = ABC AND status in ("To Do", "In Progress")'
         )
         self.poll_interval = poll_interval
+        self._llm_client: Optional[LLMTestGenerator] = None
 
         if not all([self.jira_base, self.jira_user, self.jira_token]):
             raise ValueError(
@@ -171,6 +192,68 @@ class JiraPollerWithValidation:
             if os.path.exists(temp_test_path):
                 os.unlink(temp_test_path)
 
+    def _get_llm_client(self) -> LLMTestGenerator:
+        """Build (once) the in-process LLM client.
+
+        Uses the shared AGENT_LLM_* configuration (AgentConfig.from_env) so the
+        poller honors the same provider/model/base URL/API key as the agent.
+        LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL and LLM_API_KEY remain optional
+        parser-specific overrides.
+        """
+        if self._llm_client is None:
+            base = AgentConfig.from_env()
+            provider = base.llm_provider
+            override_provider = os.getenv("LLM_PROVIDER")
+            if override_provider:
+                provider = LLMProvider(override_provider.lower())
+            model = os.getenv("LLM_MODEL") or base.llm_model
+            if provider != base.llm_provider and not os.getenv("LLM_MODEL"):
+                model = DEFAULT_MODELS[provider]
+            config = LLMConfig(
+                provider=provider,
+                model=model,
+                temperature=base.llm_temperature,
+                max_tokens=base.llm_max_tokens,
+                api_key=os.getenv("LLM_API_KEY") or base.llm_api_key,
+                base_url=os.getenv("LLM_BASE_URL") or base.llm_base_url,
+                timeout=120,
+                max_cost_usd=base.llm_max_cost_usd,
+            )
+            self._llm_client = LLMTestGenerator(config)
+        return self._llm_client
+
+    def parse_with_llm(self, ticket: Dict[str, Any]) -> Optional["TestRequirement"]:
+        """Parse a Jira ticket into structured test requirements using LLM.
+
+        Builds a parser prompt from the ticket fields, calls the in-process LLM client,
+        and validates the response with Pydantic.
+
+        Args:
+            ticket: Raw Jira ticket dict from the API.
+
+        Returns:
+            Validated TestRequirement or None if parsing fails.
+        """
+        ticket_id = ticket.get("key", "unknown")
+        fields = ticket.get("fields", {})
+        title = fields.get("summary", "")
+        description = fields.get("description", "")
+
+        if not description:
+            return None
+
+        prompt = build_parser_prompt(ticket_id, title, description)
+
+        try:
+            raw = self._get_llm_client().complete(prompt)
+            if not raw or not raw.strip():
+                print(f"LLM returned an empty response for {ticket_id}")
+                return None
+            return parse_llm_response(raw, ticket_id, title, description)
+        except Exception as e:
+            print(f"LLM parsing failed for {ticket_id}: {e}")
+            return None
+
     def process_ticket(self, ticket: Dict[str, Any]) -> None:
         """Process a single ticket through the agent pipeline with validation"""
 
@@ -181,33 +264,58 @@ class JiraPollerWithValidation:
             "acceptance_criteria": [],
         }
 
-        # Parse acceptance criteria from description or custom fields
-        description = ticket.get("fields", {}).get("description", "")
-        if description:
-            # Simple parsing - look for bullet points or numbered lists
-            lines = description.split("\n")
-            for line in lines:
-                line = line.strip()
-                if (
-                    line.startswith("-")
-                    or line.startswith("*")
-                    or line.startswith("1.")
-                ):
-                    # Simple heuristic for acceptance criteria
-                    ticket_data["acceptance_criteria"].append(
+        # Try LLM-based structured parsing first
+        requirement = self.parse_with_llm(ticket)
+        if requirement and not requirement.needs_human_review:
+            # One entry per scenario so each becomes its own test function
+            # (fresh browser context) with its own preconditions and assertions.
+            ticket_data["scenarios"] = [
+                {
+                    "name": scenario.name,
+                    "type": scenario.type,
+                    "preconditions": scenario.preconditions,
+                    "expected_result": scenario.expected_result,
+                    "steps": [
                         {
-                            "action": "click",  # Default action
-                            "target": "unknown",
-                            "value": line.strip("-* 1234567890."),
+                            "action": LLM_ACTION_MAP.get(step.action, step.action),
+                            "target": step.target,
+                            "value": step.value or "",
+                            "assertion": step.assertion or "",
                         }
-                    )
-
-        # If no acceptance criteria found, create a basic test
-        if not ticket_data["acceptance_criteria"]:
-            ticket_data["acceptance_criteria"] = [
-                {"action": "goto", "target": "/"},
-                {"action": "assert_text", "value": "Welcome"},
+                        for step in scenario.steps
+                    ],
+                }
+                for scenario in requirement.scenarios
             ]
+            ticket_data["test_requirement"] = requirement.model_dump()
+        else:
+            # Fallback to naive parsing
+            description = ticket.get("fields", {}).get("description", "")
+            if description:
+                # Simple parsing - look for bullet points or numbered lists
+                lines = description.split("\n")
+                for line in lines:
+                    line = line.strip()
+                    if (
+                        line.startswith("-")
+                        or line.startswith("*")
+                        or line.startswith("1.")
+                    ):
+                        # Simple heuristic for acceptance criteria
+                        ticket_data["acceptance_criteria"].append(
+                            {
+                                "action": "click",  # Default action
+                                "target": "unknown",
+                                "value": line.strip("-* 1234567890."),
+                            }
+                        )
+
+            # If no acceptance criteria found, create a basic test
+            if not ticket_data["acceptance_criteria"]:
+                ticket_data["acceptance_criteria"] = [
+                    {"action": "goto", "target": "/"},
+                    {"action": "assert_text", "value": "Welcome"},
+                ]
 
         # Create temporary files for processing
         with tempfile.NamedTemporaryFile(

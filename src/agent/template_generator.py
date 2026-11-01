@@ -49,7 +49,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -287,11 +287,66 @@ class TemplateTestGenerator:
         # Generate selector mapping
         selector_mapping = self.generate_selector_mapping(kb)
 
-        # Generate test steps
-        test_steps = []
-        current_page = None  # Track which page we're currently on
+        scenarios = ticket.get("scenarios") or []
+        if scenarios:
+            # Structured requirement: one independent test function per scenario
+            functions = []
+            used_names = set()
+            for scenario in scenarios:
+                name = f"{function_name}_{self.to_snake_case(scenario.get('name', ''))}".rstrip("_")
+                base, n = name, 2
+                while name in used_names:
+                    name, n = f"{base}_{n}", n + 1
+                used_names.add(name)
+                functions.append(
+                    self._render_scenario_function(
+                        name, title, scenario, selector_mapping, kb
+                    )
+                )
+            return self._render_module(title, description, "\n\n".join(functions))
 
-        for criterion in acceptance_criteria:
+        # Generate test steps
+        test_steps = self._build_steps(acceptance_criteria, selector_mapping, kb)
+
+        # If no structured steps found, generate basic navigation
+        if not test_steps:
+            test_steps = [
+                "    await page.goto('/')",
+                "    # TODO: Add test steps based on acceptance criteria",
+            ]
+
+        body = f'''@pytest.mark.asyncio
+@pytest.mark.generated
+async def {function_name}(page, app):
+    """
+    Test case: {self._doc_text(self._comment_text(title))}
+
+    Generated from ticket acceptance criteria.
+    """
+{chr(10).join(test_steps)}
+'''
+        return self._render_module(title, description, body)
+
+    def _build_steps(
+        self,
+        criteria: list,
+        selector_mapping: Dict[str, str],
+        kb: Dict[str, Any],
+    ) -> list:
+        """Turn acceptance criteria into generated step lines."""
+        return self._build_steps_tracked(criteria, selector_mapping, kb, None)[0]
+
+    def _build_steps_tracked(
+        self,
+        criteria: list,
+        selector_mapping: Dict[str, str],
+        kb: Dict[str, Any],
+        current_page: Optional[str],
+    ) -> Tuple[list, Optional[str]]:
+        """Build step lines, carrying the current page across calls."""
+        test_steps = []
+
+        for criterion in criteria:
             if isinstance(criterion, dict) and "steps" in criterion:
                 # Handle structured acceptance criteria
                 steps = criterion.get("steps", [])
@@ -324,19 +379,62 @@ class TemplateTestGenerator:
             else:
                 # Handle string-based criteria (convert to comment)
                 test_steps.append(f"    # {criterion}")
+        return test_steps, current_page
 
-        # If no structured steps found, generate basic navigation
-        if not test_steps:
-            test_steps = [
-                "    await page.goto('/')",
-                "    # TODO: Add test steps based on acceptance criteria",
-            ]
+    @staticmethod
+    def _doc_text(text: Any) -> str:
+        """Escape text so it cannot terminate or alter a triple-quoted docstring."""
+        return str(text).replace("\\", "\\\\").replace('"', '\\"')
 
-        # Combine all parts into complete test
-        test_code = f'''"""
-Generated test for: {title}
+    @staticmethod
+    def _comment_text(text: Any) -> str:
+        """Collapse text to one line so it is safe inside a # comment."""
+        return " ".join(str(text).split())
 
-Description: {description}
+    def _render_scenario_function(
+        self,
+        function_name: str,
+        title: str,
+        scenario: Dict[str, Any],
+        selector_mapping: Dict[str, str],
+        kb: Dict[str, Any],
+    ) -> str:
+        """Render one independent test function for a single scenario."""
+        lines = []
+        current_page: Optional[str] = None  # navigation state spans the scenario
+        for pre in scenario.get("preconditions", []):
+            lines.append(f"    # Precondition: {self._comment_text(pre)}")
+        for step in scenario.get("steps", []):
+            rendered, current_page = self._build_steps_tracked(
+                [step], selector_mapping, kb, current_page
+            )
+            lines.extend(rendered)
+            if step.get("assertion"):
+                lines.append(f"    # Expected: {self._comment_text(step['assertion'])}")
+        if scenario.get("expected_result"):
+            lines.append(
+                f"    # Expected result: {self._comment_text(scenario['expected_result'])}"
+            )
+        if not lines:
+            lines = ["    await page.goto('/')"]
+        scenario_name = self._comment_text(scenario.get("name", ""))
+        return f'''@pytest.mark.asyncio
+@pytest.mark.generated
+async def {function_name}(page, app):
+    """
+    Test case: {self._doc_text(self._comment_text(title))} - {self._doc_text(scenario_name)}
+
+    Generated from ticket scenario ({self._doc_text(self._comment_text(scenario.get("type", "happy_path")))}).
+    """
+{chr(10).join(lines)}
+'''
+
+    def _render_module(self, title: str, description: str, body: str) -> str:
+        """Wrap generated test function(s) in the module header."""
+        return f'''"""
+Generated test for: {self._doc_text(self._comment_text(title))}
+
+Description: {self._doc_text(description)}
 
 This test was automatically generated from Jira ticket acceptance criteria
 using the template-based test generator.
@@ -346,18 +444,7 @@ import pytest
 from playwright.async_api import expect
 
 
-@pytest.mark.asyncio
-@pytest.mark.generated
-async def {function_name}(page, app):
-    """
-    Test case: {title}
-
-    Generated from ticket acceptance criteria.
-    """
-{chr(10).join(test_steps)}
-'''
-
-        return test_code
+{body}'''
 
     def generate_from_files(
         self, ticket_file: str, kb_file: str, output_file: Optional[str] = None

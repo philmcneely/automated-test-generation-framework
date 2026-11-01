@@ -214,8 +214,12 @@ class TestTicketProcessing:
             jira_token="testtoken",
         )
 
+        # LLM parsing is a separate subprocess call (covered by TestLLMParsing);
+        # isolate it so only the template generator subprocess is observed here.
         # Mock the validate_and_save_test method
-        with patch.object(poller, "validate_and_save_test", return_value=True):
+        with patch.object(poller, "parse_with_llm", return_value=None), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
             ticket = {
                 "key": "TEST-123",
                 "fields": {
@@ -259,7 +263,9 @@ class TestTicketProcessing:
         )
 
         # Mock the validate_and_save_test method
-        with patch.object(poller, "validate_and_save_test", return_value=True):
+        with patch.object(poller, "parse_with_llm", return_value=None), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
             ticket = {
                 "key": "TEST-123",
                 "fields": {"summary": "Test functionality", "description": ""},
@@ -272,6 +278,131 @@ class TestTicketProcessing:
 
             # Verify cleanup was called
             mock_unlink.assert_called_once_with("/tmp/test_ticket.json")
+
+
+class TestLLMParsing:
+    """Test the parse_with_llm method."""
+
+    def _poller(self) -> JiraPollerWithValidation:
+        return JiraPollerWithValidation(
+            jira_base="https://test.atlassian.net",
+            jira_user="testuser",
+            jira_token="testtoken",
+        )
+
+    def test_parse_with_llm_skips_ticket_without_description(self) -> None:
+        """No description means no LLM call and no requirement."""
+        poller = self._poller()
+        client = MagicMock()
+        with patch.object(poller, "_get_llm_client", return_value=client):
+            ticket = {"key": "TEST-1", "fields": {"summary": "x", "description": ""}}
+            assert poller.parse_with_llm(ticket) is None
+        client.complete.assert_not_called()
+
+    def test_parse_with_llm_returns_none_on_client_error(self) -> None:
+        """A client error yields None so the caller can fall back."""
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.side_effect = RuntimeError("boom")
+        ticket = {
+            "key": "TEST-1",
+            "fields": {"summary": "x", "description": "- do a thing"},
+        }
+        with patch.object(poller, "_get_llm_client", return_value=client):
+            assert poller.parse_with_llm(ticket) is None
+        client.complete.assert_called_once()
+
+    def test_parse_with_llm_returns_none_on_empty_response(self) -> None:
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "  "
+        ticket = {"key": "T-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "_get_llm_client", return_value=client):
+            assert poller.parse_with_llm(ticket) is None
+
+    def test_parse_with_llm_parses_returned_text(self) -> None:
+        """Raw completion text is handed to parse_llm_response."""
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "raw model text"
+        sentinel = object()
+        ticket = {"key": "T-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "_get_llm_client", return_value=client), patch(
+            "src.poller.jira_poller_with_validation.parse_llm_response",
+            return_value=sentinel,
+        ) as parse:
+            assert poller.parse_with_llm(ticket) is sentinel
+        parse.assert_called_once_with("raw model text", "T-1", "x", "d")
+
+    @patch("subprocess.run")
+    def test_process_ticket_runs_llm_parse_then_template_generator(
+        self, mock_run: Any
+    ) -> None:
+        """With a description, the LLM client is called, then the template generator runs."""
+        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        poller = self._poller()
+        client = MagicMock()
+        client.complete.return_value = "no json here"
+        ticket = {
+            "key": "TEST-1",
+            "fields": {"summary": "x", "description": "- Click login"},
+        }
+        with patch.object(poller, "_get_llm_client", return_value=client), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
+            poller.process_ticket(ticket)
+
+        client.complete.assert_called_once()
+        assert mock_run.call_count == 1
+        assert "src/agent/template_generator.py" in mock_run.call_args_list[0][0][0]
+
+
+    def test_process_ticket_passes_scenarios_with_translated_actions(self) -> None:
+        """Scenarios stay separate and actions use the generator vocabulary."""
+        from src.models.test_requirement import TestRequirement
+
+        req = TestRequirement.model_validate(
+            {
+                "ticket_id": "TEST-1",
+                "title": "x",
+                "scenarios": [
+                    {
+                        "name": "a",
+                        "steps": [
+                            {"action": "navigate", "target": "/login"},
+                            {"action": "assert_visible", "target": "#d"},
+                        ],
+                        "expected_result": "ok",
+                    },
+                    {
+                        "name": "b",
+                        "steps": [
+                            {"action": "wait", "target": "#x"},
+                            {"action": "assert_text", "target": "", "value": "Err"},
+                        ],
+                        "expected_result": "err",
+                    },
+                ],
+                "confidence": {"overall": 0.9, "steps": 0.9, "selectors": 0.9, "test_data": 0.9},
+            }
+        )
+        poller = self._poller()
+        captured: dict = {}
+
+        def fake_dump(data: Any, fh: Any) -> None:
+            captured.update(data)
+
+        ticket = {"key": "TEST-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "parse_with_llm", return_value=req), patch(
+            "subprocess.run", return_value=MagicMock(returncode=0, stdout="", stderr="")
+        ), patch("json.dump", side_effect=fake_dump), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
+            poller.process_ticket(ticket)
+
+        assert len(captured["scenarios"]) == 2
+        assert [s["action"] for s in captured["scenarios"][0]["steps"]] == ["goto", "assert_visible"]
+        assert captured["scenarios"][1]["steps"][0]["action"] == "wait_for_selector"
 
 
 class TestMainLoop:
@@ -325,3 +456,52 @@ class TestMainLoop:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestLLMClientConfig:
+    """_get_llm_client honors AGENT_LLM_* with LLM_* overrides."""
+
+    _VARS = [
+        "AGENT_LLM_PROVIDER", "AGENT_LLM_MODEL", "AGENT_LLM_BASE_URL",
+        "AGENT_LLM_API_KEY", "LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL",
+        "LLM_API_KEY",
+    ]
+
+    def _client_config(self, monkeypatch: Any, **env: str) -> Any:
+        for var in self._VARS:
+            monkeypatch.delenv(var, raising=False)
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        poller = JiraPollerWithValidation(
+            jira_base="https://test.atlassian.net", jira_user="u", jira_token="t"
+        )
+        with patch("src.poller.jira_poller_with_validation.LLMTestGenerator") as gen:
+            poller._get_llm_client()
+        return gen.call_args[0][0]
+
+    def test_honors_agent_llm_env(self, monkeypatch: Any) -> None:
+        cfg = self._client_config(
+            monkeypatch,
+            AGENT_LLM_PROVIDER="ollama",
+            AGENT_LLM_MODEL="qwen2.5:7b",
+            AGENT_LLM_BASE_URL="http://localhost:11434",
+            AGENT_LLM_API_KEY="agent-key",
+        )
+        assert cfg.provider.value == "ollama"
+        assert cfg.model == "qwen2.5:7b"
+        assert cfg.base_url == "http://localhost:11434"
+        assert cfg.api_key == "agent-key"
+
+    def test_llm_vars_override_agent_vars(self, monkeypatch: Any) -> None:
+        cfg = self._client_config(
+            monkeypatch,
+            AGENT_LLM_PROVIDER="openai",
+            AGENT_LLM_API_KEY="agent-key",
+            LLM_PROVIDER="ollama",
+            LLM_BASE_URL="http://other:11434",
+            LLM_API_KEY="parser-key",
+        )
+        assert cfg.provider.value == "ollama"
+        assert cfg.model == "llama3.1:8b"
+        assert cfg.base_url == "http://other:11434"
+        assert cfg.api_key == "parser-key"

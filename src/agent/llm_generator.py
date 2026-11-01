@@ -425,6 +425,26 @@ Generate the test code now:
 
         return "\n".join(cleaned_lines)
 
+    def _call_provider(self, prompt: str) -> Tuple[str, int, float]:
+        """Dispatch a prompt to the configured provider."""
+        if self.config.provider == LLMProvider.OPENAI:
+            return self._call_openai(prompt)
+        if self.config.provider == LLMProvider.CLAUDE:
+            return self._call_claude(prompt)
+        if self.config.provider == LLMProvider.OLLAMA:
+            return self._call_ollama(prompt)
+        raise ValueError(f"Unsupported provider: {self.config.provider}")
+
+    def complete(self, prompt: str) -> str:
+        """Send one prompt to the configured provider and return the raw text."""
+        content, _tokens, cost = self._call_provider(prompt)
+        self.total_cost += cost
+        if self.config.track_costs and cost > self.config.max_cost_usd:
+            raise ValueError(
+                f"Completion cost ${cost:.4f} exceeds limit ${self.config.max_cost_usd}"
+            )
+        return content
+
     def generate_test(
         self,
         ticket: Dict[str, Any],
@@ -439,16 +459,7 @@ Generate the test code now:
             prompt = self._build_generation_prompt(ticket, kb, framework)
 
             # Call the appropriate LLM provider
-            content, tokens, cost = "", 0, 0.0
-
-            if self.config.provider == LLMProvider.OPENAI:
-                content, tokens, cost = self._call_openai(prompt)
-            elif self.config.provider == LLMProvider.CLAUDE:
-                content, tokens, cost = self._call_claude(prompt)
-            elif self.config.provider == LLMProvider.OLLAMA:
-                content, tokens, cost = self._call_ollama(prompt)
-            else:
-                raise ValueError(f"Unsupported provider: {self.config.provider}")
+            content, tokens, cost = self._call_provider(prompt)
 
             # Check cost limits
             if self.config.track_costs and cost > self.config.max_cost_usd:

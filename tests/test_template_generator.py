@@ -30,6 +30,7 @@ Author: PMAC
 Date: 2025-09-11
 """
 
+import ast
 import json
 import tempfile
 from pathlib import Path
@@ -365,3 +366,99 @@ class TestEdgeCases:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestScenarioGeneration:
+    """Structured scenarios become independent test functions with assertions."""
+
+    def test_each_scenario_gets_own_test_function(self) -> None:
+        generator = TemplateTestGenerator()
+        ticket = {
+            "title": "Login",
+            "scenarios": [
+                {
+                    "name": "valid login",
+                    "type": "happy_path",
+                    "preconditions": ["User exists"],
+                    "expected_result": "Dashboard shown",
+                    "steps": [
+                        {"action": "goto", "target": "/login", "value": ""},
+                        {"action": "assert_text", "target": "", "value": "Dashboard"},
+                    ],
+                },
+                {
+                    "name": "invalid login",
+                    "type": "negative",
+                    "preconditions": [],
+                    "expected_result": "Error shown",
+                    "steps": [
+                        {"action": "goto", "target": "/login", "value": ""},
+                        {"action": "assert_text", "target": "", "value": "Invalid"},
+                    ],
+                },
+            ],
+        }
+        result = generator.generate_test(ticket, {"page_objects": []})
+        assert result.count("async def test_") == 2
+        assert "async def test_login_valid_login(page, app):" in result
+        assert "async def test_login_invalid_login(page, app):" in result
+        assert "await page.goto('/login')" in result
+        assert "text=Dashboard" in result and "text=Invalid" in result
+        assert "# Precondition: User exists" in result
+        assert "# TODO" not in result
+        compile(result, "generated", "exec")
+
+
+class TestScenarioRobustness:
+    def test_hostile_scenario_metadata_cannot_escape_docstring(self) -> None:
+        generator = TemplateTestGenerator()
+        evil = 'x"""\nimport os; os.system("echo pwned")\n"""'
+        ticket = {
+            "title": evil,
+            "description": evil,
+            "scenarios": [
+                {"name": evil, "type": evil, "steps": [], "expected_result": "ok"}
+            ],
+        }
+        result = generator.generate_test(ticket, {"page_objects": []})
+        tree = ast.parse(result)
+        assert not any(
+            isinstance(n, ast.Import) and n.names[0].name == "os"
+            for n in ast.walk(tree)
+        )
+        assert not any(
+            isinstance(n, ast.Call)
+            and isinstance(n.func, ast.Attribute)
+            and n.func.attr == "system"
+            for n in ast.walk(tree)
+        )
+
+    def test_navigation_state_kept_within_scenario(self) -> None:
+        generator = TemplateTestGenerator()
+        kb = {
+            "page_objects": [
+                {
+                    "page_name": "LoginPage",
+                    "selectors": [
+                        {"element": "username_field", "selector": "#u"},
+                        {"element": "password_field", "selector": "#p"},
+                        {"element": "submit_button", "selector": "#s"},
+                    ],
+                }
+            ]
+        }
+        steps = [
+            {"action": "fill", "target": "username_field", "value": "a"},
+            {"action": "fill", "target": "password_field", "value": "b"},
+            {"action": "click", "target": "submit_button"},
+        ]
+        ticket = {
+            "title": "Login",
+            "scenarios": [
+                {"name": "one", "steps": steps},
+                {"name": "two", "steps": steps},
+            ],
+        }
+        result = generator.generate_test(ticket, kb)
+        # one navigation per scenario, none between steps
+        assert result.count(".navigate()") == 2
