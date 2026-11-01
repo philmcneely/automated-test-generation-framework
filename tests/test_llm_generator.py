@@ -432,3 +432,32 @@ class TestComplete:
             assert gen.complete("hello") == "raw"
         call.assert_called_once_with("hello")
         assert gen.total_cost == 0.25
+
+
+class TestCompleteCostLimit:
+    """complete() must honor the per-call cost limit like generate_test()."""
+
+    def _generator(self, track_costs, max_cost):
+        config = LLMConfig(
+            provider=LLMProvider.OPENAI,
+            model="gpt-4",
+            track_costs=track_costs,
+            max_cost_usd=max_cost,
+        )
+        return LLMTestGenerator(config)
+
+    def test_complete_raises_over_limit(self):
+        gen = self._generator(True, 0.01)
+        with patch.object(gen, "_call_provider", return_value=("out", 100, 0.5)):
+            with pytest.raises(ValueError, match="exceeds limit"):
+                gen.complete("prompt")
+
+    def test_complete_returns_within_limit(self):
+        gen = self._generator(True, 1.0)
+        with patch.object(gen, "_call_provider", return_value=("out", 100, 0.5)):
+            assert gen.complete("prompt") == "out"
+
+    def test_complete_ignores_limit_when_not_tracking(self):
+        gen = self._generator(False, 0.01)
+        with patch.object(gen, "_call_provider", return_value=("out", 100, 0.5)):
+            assert gen.complete("prompt") == "out"

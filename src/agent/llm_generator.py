@@ -439,6 +439,10 @@ Generate the test code now:
         """Send one prompt to the configured provider and return the raw text."""
         content, _tokens, cost = self._call_provider(prompt)
         self.total_cost += cost
+        if self.config.track_costs and cost > self.config.max_cost_usd:
+            raise ValueError(
+                f"Completion cost ${cost:.4f} exceeds limit ${self.config.max_cost_usd}"
+            )
         return content
 
     def generate_test(
