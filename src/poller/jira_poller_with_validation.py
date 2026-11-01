@@ -45,12 +45,18 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__f
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-from src.agent.config import LLMProvider
+from src.agent.config import AgentConfig, LLMProvider
 from src.agent.llm_generator import LLMConfig, LLMTestGenerator
 from src.poller.llm_parser import build_parser_prompt, parse_llm_response
 
 
 # Parser vocabulary -> TemplateTestGenerator vocabulary.
+DEFAULT_MODELS = {
+    LLMProvider.OPENAI: "gpt-4-turbo-preview",
+    LLMProvider.CLAUDE: "claude-3-5-sonnet-20241022",
+    LLMProvider.OLLAMA: "llama3.1:8b",
+    LLMProvider.AZURE: "gpt-4",
+}
 LLM_ACTION_MAP = {"navigate": "goto", "wait": "wait_for_selector"}
 
 
@@ -187,20 +193,31 @@ class JiraPollerWithValidation:
                 os.unlink(temp_test_path)
 
     def _get_llm_client(self) -> LLMTestGenerator:
-        """Build (once) the in-process LLM client from LLM_* environment."""
+        """Build (once) the in-process LLM client.
+
+        Uses the shared AGENT_LLM_* configuration (AgentConfig.from_env) so the
+        poller honors the same provider/model/base URL/API key as the agent.
+        LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL and LLM_API_KEY remain optional
+        parser-specific overrides.
+        """
         if self._llm_client is None:
-            provider = LLMProvider(os.getenv("LLM_PROVIDER", "openai"))
-            defaults = {
-                LLMProvider.OPENAI: "gpt-4-turbo-preview",
-                LLMProvider.CLAUDE: "claude-3-5-sonnet-20241022",
-                LLMProvider.OLLAMA: "llama3.1:8b",
-                LLMProvider.AZURE: "gpt-4",
-            }
+            base = AgentConfig.from_env()
+            provider = base.llm_provider
+            override_provider = os.getenv("LLM_PROVIDER")
+            if override_provider:
+                provider = LLMProvider(override_provider.lower())
+            model = os.getenv("LLM_MODEL") or base.llm_model
+            if provider != base.llm_provider and not os.getenv("LLM_MODEL"):
+                model = DEFAULT_MODELS[provider]
             config = LLMConfig(
                 provider=provider,
-                model=os.getenv("LLM_MODEL", defaults[provider]),
-                base_url=os.getenv("LLM_BASE_URL"),
+                model=model,
+                temperature=base.llm_temperature,
+                max_tokens=base.llm_max_tokens,
+                api_key=os.getenv("LLM_API_KEY") or base.llm_api_key,
+                base_url=os.getenv("LLM_BASE_URL") or base.llm_base_url,
                 timeout=120,
+                max_cost_usd=base.llm_max_cost_usd,
             )
             self._llm_client = LLMTestGenerator(config)
         return self._llm_client

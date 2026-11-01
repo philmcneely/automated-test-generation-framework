@@ -456,3 +456,52 @@ class TestMainLoop:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestLLMClientConfig:
+    """_get_llm_client honors AGENT_LLM_* with LLM_* overrides."""
+
+    _VARS = [
+        "AGENT_LLM_PROVIDER", "AGENT_LLM_MODEL", "AGENT_LLM_BASE_URL",
+        "AGENT_LLM_API_KEY", "LLM_PROVIDER", "LLM_MODEL", "LLM_BASE_URL",
+        "LLM_API_KEY",
+    ]
+
+    def _client_config(self, monkeypatch: Any, **env: str) -> Any:
+        for var in self._VARS:
+            monkeypatch.delenv(var, raising=False)
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        poller = JiraPollerWithValidation(
+            jira_base="https://test.atlassian.net", jira_user="u", jira_token="t"
+        )
+        with patch("src.poller.jira_poller_with_validation.LLMTestGenerator") as gen:
+            poller._get_llm_client()
+        return gen.call_args[0][0]
+
+    def test_honors_agent_llm_env(self, monkeypatch: Any) -> None:
+        cfg = self._client_config(
+            monkeypatch,
+            AGENT_LLM_PROVIDER="ollama",
+            AGENT_LLM_MODEL="qwen2.5:7b",
+            AGENT_LLM_BASE_URL="http://localhost:11434",
+            AGENT_LLM_API_KEY="agent-key",
+        )
+        assert cfg.provider.value == "ollama"
+        assert cfg.model == "qwen2.5:7b"
+        assert cfg.base_url == "http://localhost:11434"
+        assert cfg.api_key == "agent-key"
+
+    def test_llm_vars_override_agent_vars(self, monkeypatch: Any) -> None:
+        cfg = self._client_config(
+            monkeypatch,
+            AGENT_LLM_PROVIDER="openai",
+            AGENT_LLM_API_KEY="agent-key",
+            LLM_PROVIDER="ollama",
+            LLM_BASE_URL="http://other:11434",
+            LLM_API_KEY="parser-key",
+        )
+        assert cfg.provider.value == "ollama"
+        assert cfg.model == "llama3.1:8b"
+        assert cfg.base_url == "http://other:11434"
+        assert cfg.api_key == "parser-key"
