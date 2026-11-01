@@ -39,7 +39,17 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
+# Support direct-script launch (python src/poller/jira_poller_with_validation.py),
+# where only src/poller is on sys.path and the repository root is not.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from src.poller.llm_parser import build_parser_prompt, parse_llm_response
+
+
+# Parser vocabulary -> TemplateTestGenerator vocabulary.
+LLM_ACTION_MAP = {"navigate": "goto", "wait": "wait_for_selector"}
 
 
 class JiraPollerWithValidation:
@@ -233,10 +243,25 @@ class JiraPollerWithValidation:
         # Try LLM-based structured parsing first
         requirement = self.parse_with_llm(ticket)
         if requirement and not requirement.needs_human_review:
-            ticket_data["acceptance_criteria"] = [
-                {"action": step.action, "target": step.target, "value": step.value or ""}
+            # One entry per scenario so each becomes its own test function
+            # (fresh browser context) with its own preconditions and assertions.
+            ticket_data["scenarios"] = [
+                {
+                    "name": scenario.name,
+                    "type": scenario.type,
+                    "preconditions": scenario.preconditions,
+                    "expected_result": scenario.expected_result,
+                    "steps": [
+                        {
+                            "action": LLM_ACTION_MAP.get(step.action, step.action),
+                            "target": step.target,
+                            "value": step.value or "",
+                            "assertion": step.assertion or "",
+                        }
+                        for step in scenario.steps
+                    ],
+                }
                 for scenario in requirement.scenarios
-                for step in scenario.steps
             ]
             ticket_data["test_requirement"] = requirement.model_dump()
         else:

@@ -23,7 +23,8 @@ def test_parse_valid_response():
                 {"action": "navigate", "target": "/login"},
                 {"action": "fill", "target": "#username", "value": "testuser"},
                 {"action": "fill", "target": "#password", "value": "password123"},
-                {"action": "click", "target": "#login-btn"}
+                {"action": "click", "target": "#login-btn"},
+                {"action": "assert_visible", "target": "#dashboard", "assertion": "Dashboard is shown"}
             ],
             "expected_result": "User sees dashboard",
             "test_data": [{"field": "username", "type": "string"}]
@@ -35,7 +36,7 @@ def test_parse_valid_response():
     assert result is not None
     assert result.ticket_id == "PROJ-123"
     assert len(result.scenarios) == 1
-    assert len(result.scenarios[0].steps) == 4
+    assert len(result.scenarios[0].steps) == 5
     assert result.confidence.overall == 0.9
     assert not result.needs_human_review
 
@@ -44,7 +45,7 @@ def test_low_confidence_flags_review():
     response = '''{
         "ticket_id": "PROJ-456",
         "title": "Vague ticket",
-        "scenarios": [{"name": "test", "steps": [{"action": "click", "target": "button"}], "expected_result": "works"}],
+        "scenarios": [{"name": "test", "steps": [{"action": "click", "target": "button"}, {"action": "assert_visible", "target": "#ok"}], "expected_result": "works"}],
         "edge_cases": [],
         "confidence": {"overall": 0.4, "steps": 0.3, "selectors": 0.2, "test_data": 0.5}
     }'''
@@ -59,7 +60,7 @@ def test_parse_json_in_code_block():
 {
     "ticket_id": "X-1",
     "title": "Test",
-    "scenarios": [{"name": "t", "steps": [{"action": "click", "target": "#btn"}], "expected_result": "ok"}],
+    "scenarios": [{"name": "t", "steps": [{"action": "click", "target": "#btn"}, {"action": "assert_text", "target": "", "value": "Done"}], "expected_result": "ok"}],
     "edge_cases": [],
     "confidence": {"overall": 0.8, "steps": 0.8, "selectors": 0.7, "test_data": 0.8}
 }
@@ -80,7 +81,7 @@ def test_test_requirement_model():
         title="Test",
         scenarios=[TestScenario(
             name="login",
-            steps=[TestStep(action="click", target="#btn")],
+            steps=[TestStep(action="click", target="#btn"), TestStep(action="assert_visible", target="#ok")],
             expected_result="success"
         )],
         confidence=ConfidenceScores(overall=0.9, steps=0.9, selectors=0.8, test_data=0.9)
@@ -89,3 +90,36 @@ def test_test_requirement_model():
     assert len(req.scenarios) == 1
     d = req.model_dump()
     assert "scenarios" in d
+
+
+def _resp(scenarios: str) -> str:
+    return (
+        '{"ticket_id": "X-1", "title": "T", "scenarios": ' + scenarios + ', '
+        '"edge_cases": [], "confidence": {"overall": 0.9, "steps": 0.9, "selectors": 0.9, "test_data": 0.9}}'
+    )
+
+
+def test_unknown_action_rejected():
+    resp = _resp('[{"name": "s", "steps": [{"action": "clik", "target": "#a"}, '
+                 '{"action": "assert_visible", "target": "#b"}], "expected_result": "ok"}]')
+    assert parse_llm_response(resp, "X-1", "T", "d") is None
+
+
+def test_action_without_generator_equivalent_rejected():
+    resp = _resp('[{"name": "s", "steps": [{"action": "hover", "target": "#a"}, '
+                 '{"action": "assert_visible", "target": "#b"}], "expected_result": "ok"}]')
+    assert parse_llm_response(resp, "X-1", "T", "d") is None
+
+
+def test_empty_scenarios_rejected():
+    assert parse_llm_response(_resp("[]"), "X-1", "T", "d") is None
+
+
+def test_empty_steps_rejected():
+    resp = _resp('[{"name": "s", "steps": [], "expected_result": "ok"}]')
+    assert parse_llm_response(resp, "X-1", "T", "d") is None
+
+
+def test_scenario_without_assertion_step_rejected():
+    resp = _resp('[{"name": "s", "steps": [{"action": "click", "target": "#a"}], "expected_result": "ok"}]')
+    assert parse_llm_response(resp, "X-1", "T", "d") is None

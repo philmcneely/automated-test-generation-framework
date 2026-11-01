@@ -329,6 +329,54 @@ class TestLLMParsing:
         assert "src/agent/template_generator.py" in mock_run.call_args_list[1][0][0]
 
 
+    def test_process_ticket_passes_scenarios_with_translated_actions(self) -> None:
+        """Scenarios stay separate and actions use the generator vocabulary."""
+        from src.models.test_requirement import TestRequirement
+
+        req = TestRequirement.model_validate(
+            {
+                "ticket_id": "TEST-1",
+                "title": "x",
+                "scenarios": [
+                    {
+                        "name": "a",
+                        "steps": [
+                            {"action": "navigate", "target": "/login"},
+                            {"action": "assert_visible", "target": "#d"},
+                        ],
+                        "expected_result": "ok",
+                    },
+                    {
+                        "name": "b",
+                        "steps": [
+                            {"action": "wait", "target": "#x"},
+                            {"action": "assert_text", "target": "", "value": "Err"},
+                        ],
+                        "expected_result": "err",
+                    },
+                ],
+                "confidence": {"overall": 0.9, "steps": 0.9, "selectors": 0.9, "test_data": 0.9},
+            }
+        )
+        poller = self._poller()
+        captured: dict = {}
+
+        def fake_dump(data: Any, fh: Any) -> None:
+            captured.update(data)
+
+        ticket = {"key": "TEST-1", "fields": {"summary": "x", "description": "d"}}
+        with patch.object(poller, "parse_with_llm", return_value=req), patch(
+            "subprocess.run", return_value=MagicMock(returncode=0, stdout="", stderr="")
+        ), patch("json.dump", side_effect=fake_dump), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
+            poller.process_ticket(ticket)
+
+        assert len(captured["scenarios"]) == 2
+        assert [s["action"] for s in captured["scenarios"][0]["steps"]] == ["goto", "assert_visible"]
+        assert captured["scenarios"][1]["steps"][0]["action"] == "wait_for_selector"
+
+
 class TestMainLoop:
     """Test the run method and main loop functionality."""
 

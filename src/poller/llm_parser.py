@@ -22,7 +22,8 @@ For each scenario, provide:
 - type: happy_path, negative, boundary, or security
 - preconditions: what must be true before test
 - steps: ordered list of {{action, target, value, assertion}}
-  - action must be one of: click, fill, navigate, assert_text, assert_visible, wait, hover, select
+  - action must be one of: click, fill, navigate, assert_text, assert_visible, wait
+  - every scenario must include at least one assert_text or assert_visible step that checks its expected_result
   - target should be a CSS selector if identifiable, otherwise a description
   - value is the input data (for fill/select) or expected text (for assert)
 - expected_result: what should be true after test

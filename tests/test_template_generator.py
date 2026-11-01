@@ -365,3 +365,44 @@ class TestEdgeCases:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestScenarioGeneration:
+    """Structured scenarios become independent test functions with assertions."""
+
+    def test_each_scenario_gets_own_test_function(self) -> None:
+        generator = TemplateTestGenerator()
+        ticket = {
+            "title": "Login",
+            "scenarios": [
+                {
+                    "name": "valid login",
+                    "type": "happy_path",
+                    "preconditions": ["User exists"],
+                    "expected_result": "Dashboard shown",
+                    "steps": [
+                        {"action": "goto", "target": "/login", "value": ""},
+                        {"action": "assert_text", "target": "", "value": "Dashboard"},
+                    ],
+                },
+                {
+                    "name": "invalid login",
+                    "type": "negative",
+                    "preconditions": [],
+                    "expected_result": "Error shown",
+                    "steps": [
+                        {"action": "goto", "target": "/login", "value": ""},
+                        {"action": "assert_text", "target": "", "value": "Invalid"},
+                    ],
+                },
+            ],
+        }
+        result = generator.generate_test(ticket, {"page_objects": []})
+        assert result.count("async def test_") == 2
+        assert "async def test_login_valid_login(page, app):" in result
+        assert "async def test_login_invalid_login(page, app):" in result
+        assert "await page.goto('/login')" in result
+        assert "text=Dashboard" in result and "text=Invalid" in result
+        assert "# Precondition: User exists" in result
+        assert "# TODO" not in result
+        compile(result, "generated", "exec")
