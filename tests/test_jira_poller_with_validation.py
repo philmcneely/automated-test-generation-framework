@@ -214,8 +214,12 @@ class TestTicketProcessing:
             jira_token="testtoken",
         )
 
+        # LLM parsing is a separate subprocess call (covered by TestLLMParsing);
+        # isolate it so only the template generator subprocess is observed here.
         # Mock the validate_and_save_test method
-        with patch.object(poller, "validate_and_save_test", return_value=True):
+        with patch.object(poller, "parse_with_llm", return_value=None), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
             ticket = {
                 "key": "TEST-123",
                 "fields": {
@@ -259,7 +263,9 @@ class TestTicketProcessing:
         )
 
         # Mock the validate_and_save_test method
-        with patch.object(poller, "validate_and_save_test", return_value=True):
+        with patch.object(poller, "parse_with_llm", return_value=None), patch.object(
+            poller, "validate_and_save_test", return_value=True
+        ):
             ticket = {
                 "key": "TEST-123",
                 "fields": {"summary": "Test functionality", "description": ""},
@@ -272,6 +278,55 @@ class TestTicketProcessing:
 
             # Verify cleanup was called
             mock_unlink.assert_called_once_with("/tmp/test_ticket.json")
+
+
+class TestLLMParsing:
+    """Test the parse_with_llm method."""
+
+    def _poller(self) -> JiraPollerWithValidation:
+        return JiraPollerWithValidation(
+            jira_base="https://test.atlassian.net",
+            jira_user="testuser",
+            jira_token="testtoken",
+        )
+
+    def test_parse_with_llm_skips_ticket_without_description(self) -> None:
+        """No description means no LLM call and no requirement."""
+        with patch("subprocess.run") as mock_run:
+            ticket = {"key": "TEST-1", "fields": {"summary": "x", "description": ""}}
+            assert self._poller().parse_with_llm(ticket) is None
+            mock_run.assert_not_called()
+
+    @patch("subprocess.run")
+    def test_parse_with_llm_returns_none_on_generator_failure(
+        self, mock_run: Any
+    ) -> None:
+        """A failing LLM generator yields None so the caller can fall back."""
+        mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="boom")
+        ticket = {
+            "key": "TEST-1",
+            "fields": {"summary": "x", "description": "- do a thing"},
+        }
+        assert self._poller().parse_with_llm(ticket) is None
+        mock_run.assert_called_once()
+
+    @patch("subprocess.run")
+    def test_process_ticket_runs_llm_parse_then_template_generator(
+        self, mock_run: Any
+    ) -> None:
+        """With a description, the LLM parse call precedes template generation."""
+        mock_run.return_value = MagicMock(returncode=0, stdout="no json here", stderr="")
+        poller = self._poller()
+        ticket = {
+            "key": "TEST-1",
+            "fields": {"summary": "x", "description": "- Click login"},
+        }
+        with patch.object(poller, "validate_and_save_test", return_value=True):
+            poller.process_ticket(ticket)
+
+        assert mock_run.call_count == 2
+        assert "src/agent/llm_generator.py" in mock_run.call_args_list[0][0][0]
+        assert "src/agent/template_generator.py" in mock_run.call_args_list[1][0][0]
 
 
 class TestMainLoop:
